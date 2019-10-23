@@ -1,4 +1,4 @@
-import os, csv
+import os, csv, time
 import numpy as np
 import torch, cv2, os
 import matplotlib.pyplot as plt
@@ -10,7 +10,7 @@ import matplotlib.image as mpimg
 
 def check_args(args):
     # --checkpoint_dir
-    check_folder(args.save_image_path)
+    make_result_folder(args)
 
     # --result_dir
     check_folder(args.save_model_path)
@@ -18,6 +18,24 @@ def check_args(args):
 
 
 """check directory"""
+
+
+def make_result_folder(args):
+    now = time.localtime(time.time())
+    time_list = [now.tm_year, now.tm_mon, now.tm_mday, now.tm_hour, now.tm_min]
+    time_list = list(map(str, time_list))
+    time_list[0] = time_list[0][2:]
+    for i in range(1, 5):
+        if len(time_list[i]) != 2:
+            time_list[i] = '0' + time_list[i]
+    save_dir = '../results/images'
+    for i in range(0, 5):
+        save_dir = save_dir + '_' + time_list[i]
+
+    args.save_image_path = save_dir
+
+    if not os.path.exists(save_dir):
+        os.makedirs(save_dir)
 
 
 def check_folder(folder):

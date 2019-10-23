@@ -8,10 +8,12 @@ import torch
 
 
 def parse_args():
+    """ parser_args function """
+
     parser = argparse.ArgumentParser(description="Hologram Generation Net")
 
     """ Dataset """
-    parser.add_argument("--dataset_path", type=str, default="../dataset_rgb")
+    parser.add_argument("--dataset_path", type=str, default="../dataset")
     parser.add_argument("--use_preTrain", type=int, default=False)
 
     """ Training Condition """
@@ -23,7 +25,7 @@ def parse_args():
 
     """ Results """
     parser.add_argument("--print_period_error", type=int, default=10)
-    parser.add_argument("--print_period_image", type=int, default=10)
+    parser.add_argument("--print_period_image", type=int, default=100)
     parser.add_argument("--resume", "-r", action="store_true", help="resume from ckpt")
 
     """ Directories """
@@ -34,26 +36,26 @@ def parse_args():
 
 
 def main():
-    """ Hologram Generation Network """
+    """ Main function """
 
     """ Load Arguments """
     args = parse_args()
 
-    """ GPU check """
+    """ Check GPU """
     args.is_cuda = torch.cuda.is_available()
 
-    """ Network """
+    """ Define Network """
     model = HGN(args.block_num)
     if args.is_cuda:
         model.cuda()
 
-    """ Parameter check """
-    summary(model, (3, 64, 64))
+    """ check parameter """
+    summary(model, (1, 64, 64))
 
-    """ Train """
+    """ Train model """
     train(args, model)
 
-    """ Test """
+    """ Test model """
     test(args, model, -1)
 
 

@@ -43,7 +43,7 @@ class HGN(nn.Module):
 
     def make_c_layer(self, o, num_blocks, s):
         if o == 64:
-            layers = [c_block(3, o, s)]
+            layers = [c_block(1, o, s)]
             for _ in range(num_blocks - 1):
                 layers.append(c_block(o, o, s=1))
 
@@ -80,23 +80,24 @@ class HGN(nn.Module):
 
         """ encoder """
         # x = self.r(self.b(self.c(x)))
-        x = self.c_layer1(x)
-        x = self.c_layer2(x)
-        x = self.c_layer3(x)
-        x = self.c_layer4(x)
+        x1 = self.c_layer1(x)   # [3,64,64]    >>  [64,32,32]
+        x2 = self.c_layer2(x1)  # [64,32,32]   >>  [128,16,16]
+        x3 = self.c_layer3(x2)  # [128,32,32]  >>  [256,8,8]
+        x4 = self.c_layer4(x3)  # [256,32,32]  >>  [512,4,4]
         # x = self.c_layer5(x)
 
         """decoder"""
         # x = self.d_layer5(x)
-        x = self.d_layer4(x)
-        x = self.d_layer3(x)
-        x = self.d_layer2(x)
-        x = self.d_layer1(x)
+        x5 = self.d_layer4(x4)+x3  # [512,4,4]    >>  [256,8,8]
+        x6 = self.d_layer3(x5)+x2  # [256,8,8]    >>  [128,16,16]
+        x7 = self.d_layer2(x6)  # [128,16,16]  >>  [64,32,32]
+        y = self.d_layer1(x7)  # [64,32,32]   >>  [1,64,64]
+        y = torch.transpose(y, 2, 3)
 
         """processing"""
-        # x = n(x)
-        # x = torch.stack((torch.cos(x*2*math.pi), torch.sin(x*2*math.pi)), dim=4)
-        # x = torch.fft(x, 2)
-        # x = torch.sqrt(x[:, :, :, :, 0].pow(2) + x[:, :, :, :, 1].pow(2))
-        # x = n(x)
-        return x
+        y = n(y)
+        y = torch.stack((torch.cos(y*2*math.pi), torch.sin(y*2*math.pi)), dim=4)
+        y = torch.fft(y, 2)
+        y = torch.sqrt(y[:, :, :, :, 0].pow(2) + y[:, :, :, :, 1].pow(2))
+        # y = n(y)
+        return y
