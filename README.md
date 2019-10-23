@@ -1,2 +1,2 @@
 # hologram_pytorch
-Hologram Generation Network in Pytorch
+Implementation of the Hologram Generation Network(HGN) in Pytorch

@@ -1,0 +1,7 @@
+dataset
+dataset_test
+dataset_rgb
+dataset_test_rgb
+images
+models
+*.pyc
