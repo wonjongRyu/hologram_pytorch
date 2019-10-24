@@ -21,20 +21,15 @@ class myData(Dataset):
         return image, target
 
 
-def train_data_loader(args):
+def data_loader(args):
     train_images = myData(join(args.dataset_path, "train/*.*"))
     valid_images = myData(join(args.dataset_path, "valid/*.*"))
+    test_images = myData(join(args.dataset_path, "test/*.*"))
     train_loader = DataLoader(train_images, batch_size=args.batch_size, shuffle=True)
     valid_loader = DataLoader(valid_images, batch_size=args.batch_size, shuffle=True)
-
-    return train_loader, valid_loader
-
-
-def test_data_loader(args):
-    test_images = myData(join(args.dataset_path, "test/*.*"))
     test_loader = DataLoader(test_images, batch_size=args.batch_size, shuffle=False)  # ***FALSE***
 
-    return test_loader
+    return train_loader, valid_loader, test_loader
 
 
 class featuresData(Dataset):

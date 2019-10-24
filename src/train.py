@@ -1,20 +1,16 @@
 from torch.autograd import Variable
 import torch.nn as nn
 import torch.optim as optim
-from data import train_data_loader
 from utils import *
 import time
 from test import test
 
 
-def train(args, model):
+def train(args, model, train_loader, valid_loader, test_loader):
     """ train function """
 
     """ Print start time """
     print_start_time()
-
-    """ Define loader """
-    train_loader, valid_loader = train_data_loader(args)
 
     """ Train model and validate it """
     since = time.time()
@@ -35,7 +31,7 @@ def train(args, model):
 
         """ Print image """
         if ((epoch+1) % args.print_period_image) == 0:
-            test(args, model, epoch)
+            test(args, model, test_loader, epoch)
 
     """ Visualize results """
     visualize_graph(train_loss, valid_loss)

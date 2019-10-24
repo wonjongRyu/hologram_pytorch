@@ -39,35 +39,44 @@ class HGN(nn.Module):
         self.d_layer4 = self.make_d_layer(self.o, block_num[3], s=2)
         self.d_layer3 = self.make_d_layer(self.o, block_num[2], s=2)
         self.d_layer2 = self.make_d_layer(self.o, block_num[1], s=2)
-        self.d_layer1 = self.make_d_layer(1, block_num[0], s=2)
+        self.d_layer1 = self.make_d_layer(self.o, block_num[0], s=2)
 
-        self.f = f(4096, 4096)
+        self.f_layer = self.make_c_layer(1024, block_num[0], s=1, k=1, p=0)
 
-    def make_c_layer(self, o, num_blocks, s):
+        self.r = r()
+        self.b = b(1)
+        self.c = c(i=1024, o=1, k=1, s=1, p=0)
+
+    def make_c_layer(self, o, num_blocks, s, k=3, p=1):
         if o == 64:
-            layers = [c_block(1, o, s)]
+            layers = [c_block(1, o, s=s, k=k, p=p)]
             for _ in range(num_blocks - 1):
-                layers.append(c_block(o, o, s=1))
+                layers.append(c_block(o, o, s=1, k=k, p=p))
+
+        elif o == 1024:
+            layers = [c_block(32, o, s=s, k=k, p=p)]
+            for _ in range(num_blocks - 1):
+                layers.append(c_block(o, o, s=1, k=k, p=p))
 
         else:
-            layers = [c_block(o // 2, o, s)]
+            layers = [c_block(o // 2, o, s, k=k, p=p)]
             for _ in range(num_blocks - 1):
-                layers.append(c_block(o, o, s=1))
+                layers.append(c_block(o, o, s=1, k=k, p=p))
 
         self.o = o * 2
         net = nn.Sequential(*layers)
         net.apply(init_weights)
         return net
 
-    def make_d_layer(self, o, num_blocks, s):
+    def make_d_layer(self, o, num_blocks, s, k=3, p=1):
         if o == 1:
-            layers = [d_block(self.o * 2, 1, s)]
+            layers = [d_block(self.o * 2, 1, s, k=k, p=p)]
             for _ in range(num_blocks - 1):
-                layers.append(d_block(1, 1, s=1))
+                layers.append(d_block(1, 1, s=1, k=k, p=p))
         else:
-            layers = [d_block(o * 2, o, s)]
+            layers = [d_block(o * 2, o, s, k=k, p=p)]
             for _ in range(num_blocks - 1):
-                layers.append(d_block(o, o, s=1))
+                layers.append(d_block(o, o, s=1, k=k, p=p))
             self.o = o // 2
 
         net = nn.Sequential(*layers)
@@ -82,7 +91,7 @@ class HGN(nn.Module):
 
         """ encoder """
         # x = self.r(self.b(self.c(x)))
-        x1 = self.c_layer1(x)   # [3,64,64]    >>  [64,32,32]
+        x1 = self.c_layer1(x)   # [1,64,64]    >>  [64,32,32]
         x2 = self.c_layer2(x1)  # [64,32,32]   >>  [128,16,16]
         x3 = self.c_layer3(x2)  # [128,32,32]  >>  [256,8,8]
         x4 = self.c_layer4(x3)  # [256,32,32]  >>  [512,4,4]
@@ -93,11 +102,10 @@ class HGN(nn.Module):
         x5 = self.d_layer4(x4)+x3  # [512,4,4]    >>  [256,8,8]
         x6 = self.d_layer3(x5)+x2  # [256,8,8]    >>  [128,16,16]
         x7 = self.d_layer2(x6)  # [128,16,16]  >>  [64,32,32]
-        x8 = self.d_layer1(x7)  # [64,32,32]   >>  [1,64,64]
+        x8 = self.d_layer1(x7)  # [64,32,32]   >>  [32,64,64]
 
-        x9 = v1(x8)
-        x10 = self.f(x9)
-        y = v2(x10, [1, 64, 64])
+        x9 = self.f_layer(x8)
+        y = self.r(self.b(self.c(x9)))
 
         """processing"""
         y = n(y)

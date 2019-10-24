@@ -1,10 +1,9 @@
 import argparse
-from utils import *
 from models.HGN import HGN
 from train import train
 from test import test
 from torchsummary import summary
-import torch
+from data import *
 
 
 def parse_args():
@@ -49,14 +48,17 @@ def main():
     if args.is_cuda:
         model.cuda()
 
+    """ Define Data Loader """
+    train_loader, valid_loader, test_loader = data_loader(args)
+
     """ check parameter """
     summary(model, (1, 64, 64))
 
     """ Train model """
-    train(args, model)
+    train(args, model, train_loader, valid_loader, test_loader)
 
-    """ Test model """
-    test(args, model, -1)
+    """ Test trained model """
+    test(args, model, test_loader, -1)
 
 
 if __name__ == "__main__":

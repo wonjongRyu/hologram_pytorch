@@ -1,12 +1,10 @@
 import torch
 from torch.autograd import Variable
 from utils import *
-from data import test_data_loader
 from os.path import join
-import numpy as np
 
 
-def test(args, model, epoch):
+def test(args, model, test_loader, epoch):
     """
     In this function:
     1) load dataset
@@ -15,7 +13,6 @@ def test(args, model, epoch):
     """
 
     """ Dataset """
-    test_loader = test_data_loader(args)
     model.eval()
     volatile = True
 
