@@ -10,6 +10,9 @@ from test import test
 def train(args, model):
     """ train function """
 
+    """ Print start time """
+    print_start_time()
+
     """ Define loader """
     train_loader, valid_loader = train_data_loader(args)
 
@@ -36,6 +39,8 @@ def train(args, model):
 
     """ Visualize results """
     visualize_graph(train_loss, valid_loss)
+
+    print('=================[ train finish ]=================')
 
 
 def iteration(args, model, data_loader, phase="train", volatile=False):

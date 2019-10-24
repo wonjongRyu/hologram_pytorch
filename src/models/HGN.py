@@ -41,6 +41,8 @@ class HGN(nn.Module):
         self.d_layer2 = self.make_d_layer(self.o, block_num[1], s=2)
         self.d_layer1 = self.make_d_layer(1, block_num[0], s=2)
 
+        self.f = f(4096, 4096)
+
     def make_c_layer(self, o, num_blocks, s):
         if o == 64:
             layers = [c_block(1, o, s)]
@@ -91,13 +93,16 @@ class HGN(nn.Module):
         x5 = self.d_layer4(x4)+x3  # [512,4,4]    >>  [256,8,8]
         x6 = self.d_layer3(x5)+x2  # [256,8,8]    >>  [128,16,16]
         x7 = self.d_layer2(x6)  # [128,16,16]  >>  [64,32,32]
-        y = self.d_layer1(x7)  # [64,32,32]   >>  [1,64,64]
-        y = torch.transpose(y, 2, 3)
+        x8 = self.d_layer1(x7)  # [64,32,32]   >>  [1,64,64]
+
+        x9 = v1(x8)
+        x10 = self.f(x9)
+        y = v2(x10, [1, 64, 64])
 
         """processing"""
         y = n(y)
         y = torch.stack((torch.cos(y*2*math.pi), torch.sin(y*2*math.pi)), dim=4)
         y = torch.fft(y, 2)
         y = torch.sqrt(y[:, :, :, :, 0].pow(2) + y[:, :, :, :, 1].pow(2))
-        # y = n(y)
+        y = n(y)
         return y

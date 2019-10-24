@@ -20,7 +20,7 @@ def check_args(args):
 """check directory"""
 
 
-def make_result_folder(args):
+def get_time_list():
     now = time.localtime(time.time())
     time_list = [now.tm_year, now.tm_mon, now.tm_mday, now.tm_hour, now.tm_min]
     time_list = list(map(str, time_list))
@@ -28,6 +28,19 @@ def make_result_folder(args):
     for i in range(1, 5):
         if len(time_list[i]) != 2:
             time_list[i] = '0' + time_list[i]
+    time_list = time_list + ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+    return time_list
+
+
+def print_start_time():
+    tl = get_time_list()
+    print('')
+    print('=================[ 20{}{}{} {}:{} ]================='.format(tl[0], tl[4+int(tl[1])], tl[2], tl[3], tl[4]))
+    print('=================[   TRAIN START   ]=================')
+    print('')
+
+def make_result_folder(args):
+    time_list = get_time_list()
     save_dir = '../results/images'
     for i in range(0, 5):
         save_dir = save_dir + '_' + time_list[i]
@@ -62,9 +75,14 @@ def visualize_graph(train_loss, valid_loss):
     plt.show()
 
 
-def print_loss(epoch, time, train_epoch_loss, valid_epoch_loss):
+def print_loss(epoch, seconds, train_loss, valid_loss):
+    h = int(seconds / 3600)
+    seconds = seconds - h * 3600
+    m = int(seconds / 60)
+    seconds = seconds - m * 60
+    s = int(seconds)
     print(
-        f"[epoch:{epoch}] time:{time:{4}.{4}}, train loss:{train_epoch_loss:{5}.{4}}, valid loss:{valid_epoch_loss:{5}.{4}}"
+        f"[epoch:{epoch:04}] time:{h:02}h {m:02}m {s:02}s, train_loss:{train_loss:.04}, valid_loss:{valid_loss:.04}"
     )
 
 

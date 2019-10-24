@@ -1,7 +1,4 @@
-dataset
-dataset_test
-dataset_rgb
-dataset_test_rgb
+dataset*
 results
 models
 *.pyc

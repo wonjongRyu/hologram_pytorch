@@ -13,7 +13,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Hologram Generation Net")
 
     """ Dataset """
-    parser.add_argument("--dataset_path", type=str, default="../dataset")
+    parser.add_argument("--dataset_path", type=str, default="../dataset4000")
     parser.add_argument("--use_preTrain", type=int, default=False)
 
     """ Training Condition """
