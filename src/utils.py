@@ -35,7 +35,7 @@ def get_time_list():
 def print_start_time():
     tl = get_time_list()
     print('')
-    print('=================[ 20{}{}{} {}:{} ]================='.format(tl[0], tl[4+int(tl[1])], tl[2], tl[3], tl[4]))
+    print('=================[   {}{} {}:{}   ]================='.format(tl[0], tl[4+int(tl[1])], tl[2], tl[3], tl[4]))
     print('=================[   TRAIN START   ]=================')
     print('')
 

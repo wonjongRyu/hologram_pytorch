@@ -12,13 +12,13 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Hologram Generation Net")
 
     """ Dataset """
-    parser.add_argument("--dataset_path", type=str, default="../dataset4000")
+    parser.add_argument("--dataset_path", type=str, default="../dataset_test")
     parser.add_argument("--use_preTrain", type=int, default=False)
 
     """ Training Condition """
     parser.add_argument("--is_cuda", type=int, default=True)
     parser.add_argument("--block_num", type=list, default=[2, 2, 2, 2, 2])
-    parser.add_argument("--epoch_num", type=int, default=1000)
+    parser.add_argument("--epoch_num", type=int, default=10000)
     parser.add_argument("--batch_size", type=int, default=128)
     parser.add_argument("--learning_rate", type=float, default=0.0001)
 

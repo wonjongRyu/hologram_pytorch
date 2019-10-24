@@ -6,7 +6,7 @@ import torch
 
 
 class c_block(nn.Module):
-    def __init__(self, i, o, s, k, p):
+    def __init__(self, i, o, k, s, p):
         super(c_block, self).__init__()
         self.c1 = c(i, o, k=k, s=s, p=p)
         self.c2 = c(o, o, k=k, s=1, p=p)
@@ -29,7 +29,7 @@ class c_block(nn.Module):
 
 
 class d_block(nn.Module):
-    def __init__(self, i, o, s, k, p):
+    def __init__(self, i, o, k, s, p):
         super(d_block, self).__init__()
         self.d1 = d(i, o, k=k, s=s, p=p)
         self.d2 = d(o, o, k=k, s=1, p=p)
