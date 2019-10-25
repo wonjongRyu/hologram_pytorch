@@ -31,17 +31,18 @@ class HGN(nn.Module):
         self.c_layer2 = self.make_c_layer(self.o, block_num[1], s=2)
         self.c_layer3 = self.make_c_layer(self.o, block_num[2], s=2)
         self.c_layer4 = self.make_c_layer(self.o, block_num[3], s=2)
-        # self.c_layer5 = self.make_c_layer(self.o, block_num[4], s=2)
+        self.c_layer5 = self.make_c_layer(self.o, block_num[4], s=2)
 
         self.o //= 4
 
-        # self.d_layer5 = self.make_d_layer(self.o, block_num[4], s=2)
+        self.d_layer5 = self.make_d_layer(self.o, block_num[4], s=2)
         self.d_layer4 = self.make_d_layer(self.o, block_num[3], s=2)
         self.d_layer3 = self.make_d_layer(self.o, block_num[2], s=2)
         self.d_layer2 = self.make_d_layer(self.o, block_num[1], s=2)
         self.d_layer1 = self.make_d_layer(1, block_num[0], s=2)
 
-        self.f = f(4096, 4096)
+        self.f1 = f(4096, 4096)
+        self.f2 = f(4096, 4096)
 
         self.r = r()
         self.b1 = b(64)
@@ -93,23 +94,27 @@ class HGN(nn.Module):
         x2 = self.c_layer2(x1)  # [64,32,32]   >>  [128,16,16]
         x3 = self.c_layer3(x2)  # [128,32,32]  >>  [256,8,8]
         x4 = self.c_layer4(x3)  # [256,32,32]  >>  [512,4,4]
-        # x = self.c_layer5(x)
+        x10 = self.c_layer5(x4)
+
+        x11 = v1(x10)
+        x12 = self.r(self.f1(x11))
+        x13 = v2(x12, [1024, 2, 2])
 
         """decoder"""
-        # x = self.d_layer5(x)
-        x5 = self.d_layer4(x4) + x3  # [512,4,4]    >>  [256,8,8]
+        x14 = self.d_layer5(x13) + x4
+        x5 = self.d_layer4(x14) + x3  # [512,4,4]    >>  [256,8,8]
         x6 = self.d_layer3(x5) + x2  # [256,8,8]    >>  [128,16,16]
         x7 = self.d_layer2(x6)  # [128,16,16]  >>  [64,32,32]
         x8 = self.d_layer1(x7)  # [64,32,32]   >>  [1,64,64]
 
         x9 = v1(x8)
-        x10 = self.f(x9)
-        y = v2(x10, [1, 64, 64])
+        y = self.r(self.f2(x9))
+        y = v2(y, [1, 64, 64])
 
         """processing"""
-        y = n(y)
-        y = torch.stack((torch.cos(y * 2 * math.pi), torch.sin(y * 2 * math.pi)), dim=4)
-        y = torch.fft(y, 2)
-        y = torch.sqrt(y[:, :, :, :, 0].pow(2) + y[:, :, :, :, 1].pow(2))
-        y = n(y)
-        return y
+        z = n(y)
+        z = torch.stack((torch.cos(z * 2 * math.pi), torch.sin(z * 2 * math.pi)), dim=4)
+        z = torch.fft(z, 2)
+        z = torch.sqrt(z[:, :, :, :, 0].pow(2) + z[:, :, :, :, 1].pow(2))
+        z = n(z)
+        return y, z

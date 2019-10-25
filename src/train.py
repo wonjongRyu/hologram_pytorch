@@ -60,14 +60,13 @@ def iteration(args, model, data_loader, phase="train", volatile=False):
         """ Load data """
         if args.is_cuda:
             image, target = image.cuda(), target.cuda()
-        image, target = Variable(image, volatile), Variable(target)
 
         """ Initialize gradient """
         if phase == "train":
             optimizer.zero_grad()
 
         """ Run model and calculate loss """
-        output = model(image)
+        hologram, output = model(image)
         loss = criterion(output, target)
         loss_sum += loss.item()
 
