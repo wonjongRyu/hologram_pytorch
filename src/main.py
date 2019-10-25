@@ -21,7 +21,7 @@ def parse_args():
     parser.add_argument("--epoch_num", type=int, default=1000)
     parser.add_argument("--batch_size", type=int, default=128)
     parser.add_argument("--learning_rate", type=float, default=0.0001)
-    parser.add_argument("--loss_ratio", type=float, default=0.5)
+    parser.add_argument("--loss_ratio", type=float, default=1)
 
     """ Results """
     parser.add_argument("--print_period_error", type=int, default=10)

@@ -17,20 +17,19 @@ def train(args, model, train_loader, valid_loader, test_loader):
     valid_loss, valid_acc = [], []
     for epoch in range(0, args.epoch_num+1):
         """ run 1 epoch and get loss """
-        train_loss1, train_loss2, train_total = iteration(args, model, train_loader, phase="train")
-        valid_loss1, valid_loss2, valid_total = iteration(args, model, valid_loader, phase="valid")
-
+        train_loss1, train_loss2, train_total = iteration(since, args, model, epoch, train_loader, phase="train")
+        valid_loss1, valid_loss2, valid_total = iteration(since, args, model, epoch, valid_loader, phase="valid")
         """ Log loss """
         train_loss.append(train_total)
         valid_loss.append(valid_total)
-
         """ Print loss """
         if (epoch % args.print_period_error) == 0:
             print_2_loss(epoch, time.time() - since, train_loss1, train_loss2, train_total, valid_loss1, valid_loss2, valid_total)
-
         """ Print image """
         if ((epoch+1) % args.print_period_image) == 0:
             test(args, model, test_loader, epoch)
+        # if epoch == 100:
+        #     args.loss_ratio = 0
 
     """ Visualize results """
     visualize_graph(train_loss, valid_loss)
@@ -38,7 +37,7 @@ def train(args, model, train_loader, valid_loader, test_loader):
     print('=================[ train finish ]=================')
 
 
-def iteration(args, model, data_loader, phase="train"):
+def iteration(since, args, model, epoch, data_loader, phase="train"):
     """ iteration function """
 
     """ Phase setting: train or valid """
@@ -56,31 +55,33 @@ def iteration(args, model, data_loader, phase="train"):
 
     """ Start batch iteration """
     for batch_idx, (image, target) in enumerate(data_loader):
-
         """ Load data """
         if args.is_cuda:
             image, target = image.cuda(), target.cuda()
-
         """ Initialize gradient """
         if phase == "train":
             optimizer.zero_grad()
 
         """ Run model and calculate loss """
         hologram, reconimg = model(image)
-
+        if epoch < 50:
+            total = criterion(hologram, target)
+        else:
+            total = criterion(reconimg, image)
+        """ 
         loss1 = criterion(hologram, target)
         loss2 = criterion(reconimg, image)
         total = args.loss_ratio*loss1+(1-args.loss_ratio)*loss2
 
         loss1_sum += loss1.item()
         loss2_sum += loss2.item()
+        """
         total_sum += total.item()  # 여기 item() 없으면 GPU 박살
 
         """ Back propagation """
         if phase == "train":
             total.backward()
             optimizer.step()
-
         """ Clear memory """
         torch.cuda.empty_cache()
 

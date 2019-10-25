@@ -39,6 +39,7 @@ def print_start_time():
     print('=================[   TRAIN START   ]=================')
     print('')
 
+
 def make_result_folder(args):
     time_list = get_time_list()
     save_dir = '../results/images'
@@ -96,7 +97,6 @@ def print_2_loss(epoch, seconds, train_loss1, train_loss2, train_total, valid_lo
         print("epoch, time, train_loss1, train_loss2, train_total, valid1, valid2, valid_total")
 
     print(f"[{epoch:04}] {h:02}h {m:02}m {s:02}s, {train_loss1:.04}, {train_loss2:.04}, {train_total:.04}, {valid_loss1:.04}, {valid_loss2:.04}, {valid_total:.04}")
-
 
 
 def get_psnr(a, b):
