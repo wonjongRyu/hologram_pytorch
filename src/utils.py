@@ -86,6 +86,19 @@ def print_loss(epoch, seconds, train_loss, valid_loss):
     )
 
 
+def print_2_loss(epoch, seconds, train_loss1, train_loss2, train_total, valid_loss1, valid_loss2, valid_total):
+    h = int(seconds / 3600)
+    seconds = seconds - h * 3600
+    m = int(seconds / 60)
+    seconds = seconds - m * 60
+    s = int(seconds)
+    if epoch == 0:
+        print("epoch, time, train_loss1, train_loss2, train_total, valid1, valid2, valid_total")
+
+    print(f"[{epoch:04}] {h:02}h {m:02}m {s:02}s, {train_loss1:.04}, {train_loss2:.04}, {train_total:.04}, {valid_loss1:.04}, {valid_loss2:.04}, {valid_total:.04}")
+
+
+
 def get_psnr(a, b):
     psnr = 0
     error = a - b
@@ -230,8 +243,9 @@ def gs_algorithm(img, iteration_num):
 
     """Normalization"""
     hologram = normalize_img(np.angle(hologram))
-    reconimg = normalize_img(np.abs(reconimg))
-    return hologram, reconimg
+    # reconimg = normalize_img(np.abs(reconimg))
+    # return hologram, reconimg
+    return hologram
 
 
 def get_psnr(a, b):

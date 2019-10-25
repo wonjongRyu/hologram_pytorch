@@ -18,9 +18,10 @@ def parse_args():
     """ Training Condition """
     parser.add_argument("--is_cuda", type=int, default=True)
     parser.add_argument("--block_num", type=list, default=[2, 2, 2, 2, 2])
-    parser.add_argument("--epoch_num", type=int, default=10000)
+    parser.add_argument("--epoch_num", type=int, default=1000)
     parser.add_argument("--batch_size", type=int, default=128)
     parser.add_argument("--learning_rate", type=float, default=0.0001)
+    parser.add_argument("--loss_ratio", type=float, default=0.5)
 
     """ Results """
     parser.add_argument("--print_period_error", type=int, default=10)
