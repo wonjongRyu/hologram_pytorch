@@ -43,6 +43,7 @@ class HGN(nn.Module):
 
         self.f1 = f(4096, 4096)
         self.f2 = f(4096, 4096)
+        self.f3 = f(4096, 4096)
 
         self.r = r()
         self.b1 = b(64)
@@ -110,6 +111,7 @@ class HGN(nn.Module):
         y = x8
         y = v1(y)
         y = self.r(self.f2(y))
+        y = self.r(self.f3(y))
         y = v2(y, [1, 64, 64])
         y = n(y)
 

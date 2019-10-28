@@ -12,20 +12,20 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Hologram Generation Net")
 
     """ Dataset """
-    parser.add_argument("--dataset_path", type=str, default="../dataset_test")
+    parser.add_argument("--dataset_path", type=str, default="../dataset_test_10to100")
     parser.add_argument("--use_preTrain", type=int, default=False)
 
     """ Training Condition """
     parser.add_argument("--is_cuda", type=int, default=True)
-    parser.add_argument("--block_num", type=list, default=[2, 2, 2, 2, 2])
+    parser.add_argument("--block_num", type=list, default=[2, 2, 2, 2, 0])
     parser.add_argument("--epoch_num", type=int, default=1000)
-    parser.add_argument("--batch_size", type=int, default=128)
+    parser.add_argument("--batch_size", type=int, default=64)
     parser.add_argument("--learning_rate", type=float, default=0.0001)
     parser.add_argument("--loss_ratio", type=float, default=1)
 
     """ Results """
     parser.add_argument("--print_period_error", type=int, default=10)
-    parser.add_argument("--print_period_image", type=int, default=100)
+    parser.add_argument("--print_period_image", type=int, default=50)
     parser.add_argument("--resume", "-r", action="store_true", help="resume from ckpt")
 
     """ Directories """

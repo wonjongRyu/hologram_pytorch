@@ -1,4 +1,5 @@
 import os, csv, time
+from glob import glob
 import numpy as np
 import torch, cv2, os
 import matplotlib.pyplot as plt
@@ -18,6 +19,84 @@ def check_args(args):
 
 
 """check directory"""
+
+
+def make_holograms(dataset_path):
+    train_image = os.path.join(dataset_path, "train")
+    valid_image = os.path.join(dataset_path, "valid")
+    test_image = os.path.join(dataset_path, "test")
+
+    len_train = len(glob(os.path.join(train_image, "images/*.*")))
+    len_valid = len(glob(os.path.join(valid_image, "images/*.*")))
+    len_test = len(glob(os.path.join(test_image, "images/*.*")))
+
+    for i in range(len_train):
+        img = imread(os.path.join(train_image, "images/" + str(i+1)+".png"))
+        hologram = gs_algorithm(img, 10)
+        imwrite(hologram, os.path.join(train_image, "holograms/"+str(i+1)+".png"))
+
+    for i in range(len_valid):
+        img = imread(os.path.join(valid_image, "images/" + str(i + 1) + ".png"))
+        hologram = gs_algorithm(img, 10)
+        imwrite(hologram, os.path.join(valid_image, "holograms/" + str(i + 1) + ".png"))
+
+    for i in range(len_test):
+        img = imread(os.path.join(test_image, "images/" + str(i + 1) + ".png"))
+        hologram = gs_algorithm(img, 10)
+        imwrite(hologram, os.path.join(test_image, "holograms/" + str(i + 1) + ".png"))
+
+
+def make_fft_phase(dataset_path):
+    train_image = os.path.join(dataset_path, "train")
+    valid_image = os.path.join(dataset_path, "valid")
+    test_image = os.path.join(dataset_path, "test")
+
+    len_train = len(glob(os.path.join(train_image, "images/*.*")))
+    len_valid = len(glob(os.path.join(valid_image, "images/*.*")))
+    len_test = len(glob(os.path.join(test_image, "images/*.*")))
+
+    for i in range(len_train):
+        img = imread(os.path.join(train_image, "images/" + str(i+1)+".png"))
+        hologram = gs_algorithm(img, 100)
+        imwrite(hologram, os.path.join(train_image, "holograms/"+str(i+1)+".png"))
+
+    for i in range(len_valid):
+        img = imread(os.path.join(valid_image, "images/" + str(i + 1) + ".png"))
+        hologram = gs_algorithm(img, 100)
+        imwrite(hologram, os.path.join(valid_image, "holograms/" + str(i + 1) + ".png"))
+
+    for i in range(len_test):
+        img = imread(os.path.join(test_image, "images/" + str(i + 1) + ".png"))
+        hologram = gs_algorithm(img, 100)
+        imwrite(hologram, os.path.join(test_image, "holograms/" + str(i + 1) + ".png"))
+
+
+def make_phase_projection(dataset_path):
+    train_image = os.path.join(dataset_path, "train")
+    valid_image = os.path.join(dataset_path, "valid")
+    test_image = os.path.join(dataset_path, "test")
+
+    len_train = len(glob(os.path.join(train_image, "images/*.*")))
+    len_valid = len(glob(os.path.join(valid_image, "images/*.*")))
+    len_test = len(glob(os.path.join(test_image, "images/*.*")))
+
+    for i in range(len_train):
+        img = imread(os.path.join(train_image, "images/" + str(i+1)+".png"))
+        holo10, holo100 = get_gs_10and100(img)
+        imwrite(holo10, os.path.join(train_image, "images/"+str(i+1)+".png"))
+        imwrite(holo100, os.path.join(train_image, "holograms/"+str(i+1)+".png"))
+
+    for i in range(len_valid):
+        img = imread(os.path.join(valid_image, "images/" + str(i + 1) + ".png"))
+        holo10, holo100 = get_gs_10and100(img)
+        imwrite(holo10, os.path.join(train_image, "images/"+str(i+1)+".png"))
+        imwrite(holo100, os.path.join(valid_image, "holograms/" + str(i + 1) + ".png"))
+
+    for i in range(len_test):
+        img = imread(os.path.join(test_image, "images/" + str(i + 1) + ".png"))
+        holo10, holo100 = get_gs_10and100(img)
+        imwrite(holo10, os.path.join(train_image, "images/"+str(i+1)+".png"))
+        imwrite(holo100, os.path.join(test_image, "holograms/" + str(i + 1) + ".png"))
 
 
 def get_time_list():
@@ -246,6 +325,27 @@ def gs_algorithm(img, iteration_num):
     # reconimg = normalize_img(np.abs(reconimg))
     # return hologram, reconimg
     return hologram
+
+
+def get_gs_10and100(img):
+    """rgb2gray"""
+
+    """Add Random Phase"""
+    img_with_random_phase = add_random_phase(img)
+    hologram = np.fft.ifft2(img_with_random_phase)
+
+    holo1 = normalize_img(np.angle(hologram))
+
+    """Iteration"""
+
+    for i in range(100):
+        reconimg = np.fft.fft2(np.exp(1j * np.angle(hologram)))
+        hologram = np.fft.ifft2(np.multiply(img, np.exp(1j * np.angle(reconimg))))
+
+    """Normalization"""
+    holo100 = normalize_img(np.angle(hologram))
+
+    return holo1, holo100
 
 
 def get_psnr(a, b):
