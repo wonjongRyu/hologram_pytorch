@@ -32,10 +32,10 @@ def train(args, model, train_loader, valid_loader, test_loader):
         if ((epoch+1) % args.print_period_image) == 0:
             test(args, model, test_loader, epoch)
 
-        if epoch == 50:
+        if epoch == 100:
             args.loss_ratio = 0
 
-        if ((epoch+1) % 300) == 0:
+        if ((epoch+1) % 500) == 0:
             args.learning_rate = args.learning_rate/4
 
     """ Visualize results """
@@ -56,6 +56,8 @@ def iteration(args, model, data_loader, phase="train"):
     """ Define loss function and optimizer """
     criterion = nn.MSELoss()
     optimizer = optim.Adam(model.parameters(), lr=args.learning_rate)
+
+    """ Initialize the loss_sum """
     loss1_sum = 0.0
     loss2_sum = 0.0
     total_sum = 0.0
@@ -63,7 +65,7 @@ def iteration(args, model, data_loader, phase="train"):
     """ Start batch iteration """
     for batch_idx, (image, target) in enumerate(data_loader):
 
-        """ Load data """
+        """ Transfer data to GPU """
         if args.is_cuda:
             image, target = image.cuda(), target.cuda()
 

@@ -82,21 +82,21 @@ def make_phase_projection(dataset_path):
 
     for i in range(len_train):
         img = imread(os.path.join(train_image, "images/" + str(i+1)+".png"))
-        holo10, holo100 = get_gs_10and100(img)
-        imwrite(holo10, os.path.join(train_image, "images/"+str(i+1)+".png"))
-        imwrite(holo100, os.path.join(train_image, "holograms/"+str(i+1)+".png"))
+        holo1, holo100 = get_gs_10and100(img)
+        imwrite(holo1, os.path.join(train_image, "gs1/"+str(i+1)+".png"))
+        imwrite(holo100, os.path.join(train_image, "gs100/"+str(i+1)+".png"))
 
     for i in range(len_valid):
         img = imread(os.path.join(valid_image, "images/" + str(i + 1) + ".png"))
-        holo10, holo100 = get_gs_10and100(img)
-        imwrite(holo10, os.path.join(train_image, "images/"+str(i+1)+".png"))
-        imwrite(holo100, os.path.join(valid_image, "holograms/" + str(i + 1) + ".png"))
+        holo1, holo100 = get_gs_10and100(img)
+        imwrite(holo1, os.path.join(valid_image, "gs1/"+str(i+1)+".png"))
+        imwrite(holo100, os.path.join(valid_image, "gs100/" + str(i + 1) + ".png"))
 
     for i in range(len_test):
         img = imread(os.path.join(test_image, "images/" + str(i + 1) + ".png"))
-        holo10, holo100 = get_gs_10and100(img)
-        imwrite(holo10, os.path.join(train_image, "images/"+str(i+1)+".png"))
-        imwrite(holo100, os.path.join(test_image, "holograms/" + str(i + 1) + ".png"))
+        holo1, holo100 = get_gs_10and100(img)
+        imwrite(holo1, os.path.join(test_image, "gs1/"+str(i+1)+".png"))
+        imwrite(holo100, os.path.join(test_image, "gs100/" + str(i + 1) + ".png"))
 
 
 def get_time_list():

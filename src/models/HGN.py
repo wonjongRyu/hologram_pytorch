@@ -32,18 +32,21 @@ class HGN(nn.Module):
         self.c_layer3 = self.make_c_layer(self.o, block_num[2], s=2)
         self.c_layer4 = self.make_c_layer(self.o, block_num[3], s=2)
         self.c_layer5 = self.make_c_layer(self.o, block_num[4], s=2)
+        self.c_layer6 = self.make_c_layer(self.o, block_num[4], s=2)
 
         self.o //= 4
 
+        self.d_layer6 = self.make_d_layer(self.o, block_num[4], s=2)
         self.d_layer5 = self.make_d_layer(self.o, block_num[4], s=2)
         self.d_layer4 = self.make_d_layer(self.o, block_num[3], s=2)
         self.d_layer3 = self.make_d_layer(self.o, block_num[2], s=2)
         self.d_layer2 = self.make_d_layer(self.o, block_num[1], s=2)
         self.d_layer1 = self.make_d_layer(1, block_num[0], s=2)
 
-        self.f1 = f(4096, 4096)
+        self.o = 64
+
+        self.f1 = f(2048, 2048)
         self.f2 = f(4096, 4096)
-        self.f3 = f(4096, 4096)
 
         self.r = r()
         self.b1 = b(64)
@@ -95,23 +98,25 @@ class HGN(nn.Module):
         x2 = self.c_layer2(x1)  # [64,32,32]   >>  [128,16,16]
         x3 = self.c_layer3(x2)  # [128,32,32]  >>  [256,8,8]
         x4 = self.c_layer4(x3)  # [256,32,32]  >>  [512,4,4]
-        # x10 = self.c_layer5(x4)
+        x5 = self.c_layer5(x4)  # [256,32,32]  >>  [512,4,4]
+        x6 = self.c_layer6(x5)  # [256,32,32]  >>  [512,4,4]
 
-        # x11 = v1(x10)
-        # x12 = self.r(self.f1(x11))
-        # x13 = v2(x12, [1024, 2, 2])
+        x7 = v1(x6)
+        x8 = self.r(self.f1(x7))
+        x9 = v2(x8, [2048, 1, 1])
 
         """decoder"""
-        # x14 = self.d_layer5(x13) + x4
-        x5 = self.d_layer4(x4) + x3  # [512,4,4]    >>  [256,8,8]
-        x6 = self.d_layer3(x5) + x2  # [256,8,8]    >>  [128,16,16]
-        x7 = self.d_layer2(x6)  # [128,16,16]  >>  [64,32,32]
-        x8 = self.d_layer1(x7)  # [64,32,32]   >>  [1,64,64]
+        x10 = self.d_layer6(x9) + x5  # [512,4,4]    >>  [256,8,8]
+        x11 = self.d_layer5(x10) + x4  # [512,4,4]    >>  [256,8,8]
+        x12 = self.d_layer4(x11) + x3  # [512,4,4]    >>  [256,8,8]
+        x13 = self.d_layer3(x12)  # [256,8,8]    >>  [128,16,16]
+        x14 = self.d_layer2(x13)  # [128,16,16]  >>  [64,32,32]
+        
+        x15 = self.d_layer1(x14)  # [64,32,32]   >>  [1,64,64]
 
-        y = x8
+        y = x15
         y = v1(y)
         y = self.r(self.f2(y))
-        y = self.r(self.f3(y))
         y = v2(y, [1, 64, 64])
         y = n(y)
 

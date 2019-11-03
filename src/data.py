@@ -1,36 +1,69 @@
 from os.path import join
-from glob import glob
 from utils import *
 from torch.utils.data import Dataset, DataLoader
 
 
-class myData(Dataset):
+class myDataset(Dataset):
     def __init__(self, root_dir):
         self.images = glob(join(root_dir, "images/*.*"))
-        self.holograms = glob(join(root_dir, "holograms/*.*"))
+        self.target = glob(join(root_dir, "holos/*.*"))
 
     def __len__(self):
         return len(self.images)
 
     def __getitem__(self, idx):
         images = np.asarray(imread(self.images[idx]))
-        holograms = np.asarray(imread(self.holograms[idx]))
+        target = np.asarray(imread(self.target[idx]))
 
         images = np.reshape(images, (64, 64, 1))
         images = np.swapaxes(images, 0, 2)
         images = np.swapaxes(images, 1, 2)
 
-        holograms = np.reshape(holograms, (64, 64, 1))
-        holograms = np.swapaxes(holograms, 0, 2)
-        holograms = np.swapaxes(holograms, 1, 2)
+        target = np.reshape(target, (64, 64, 1))
+        target = np.swapaxes(target, 0, 2)
+        target = np.swapaxes(target, 1, 2)
 
-        return images, holograms
+        return images, target
+
+
+class myDataset2Input(Dataset):
+    def __init__(self, root_dir):
+        self.images = glob(join(root_dir, "images/*.*"))
+        self.holo1 = glob(join(root_dir, "gs1/*.*"))
+        self.holo100 = glob(join(root_dir, "gs100/*.*"))
+
+    def __len__(self):
+        return len(self.images)
+
+    def __getitem__(self, idx):
+        images = np.asarray(imread(self.images[idx]))
+        holo1 = np.asarray(imread(self.holo1[idx]))
+        holo100 = np.asarray(imread(self.holo100[idx]))
+
+        images = np.reshape(images, (64, 64, 1))
+        images = np.swapaxes(images, 0, 2)
+        images = np.swapaxes(images, 1, 2)
+
+        holo1 = np.reshape(holo1, (64, 64, 1))
+        holo1 = np.swapaxes(holo1, 0, 2)
+        holo1 = np.swapaxes(holo1, 1, 2)
+
+        holo100 = np.reshape(holo100, (64, 64, 1))
+        holo100 = np.swapaxes(holo100, 0, 2)
+        holo100 = np.swapaxes(holo100, 1, 2)
+
+        return images, holo1, holo100
 
 
 def data_loader(args):
-    train_images = myData(join(args.dataset_path, "train"))
-    valid_images = myData(join(args.dataset_path, "valid"))
-    test_images = myData(join(args.dataset_path, "test"))
+    """ Data Loader"""
+
+    """ Load image data """
+    train_images = myDataset(join(args.dataset_path, "train"))
+    valid_images = myDataset(join(args.dataset_path, "valid"))
+    test_images = myDataset(join(args.dataset_path, "test"))
+
+    """ Wrap them with DataLoader structure """
     train_loader = DataLoader(train_images, batch_size=args.batch_size, shuffle=True)
     valid_loader = DataLoader(valid_images, batch_size=args.batch_size, shuffle=True)
     test_loader = DataLoader(test_images, batch_size=args.batch_size, shuffle=False)  # ***FALSE***
