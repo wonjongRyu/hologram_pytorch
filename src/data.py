@@ -6,7 +6,7 @@ from torch.utils.data import Dataset, DataLoader
 class myDataset(Dataset):
     def __init__(self, root_dir):
         self.images = glob(join(root_dir, "images/*.*"))
-        self.target = glob(join(root_dir, "holos/*.*"))
+        self.target = glob(join(root_dir, "holograms/*.*"))
 
     def __len__(self):
         return len(self.images)

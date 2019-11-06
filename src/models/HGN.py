@@ -20,44 +20,36 @@ def init_weights(m):
 class HGN(nn.Module):
     def __init__(self, block_num):
         super(HGN, self).__init__()
-        self.o = 64
 
         """ Layers """
-        # self.r = r()
-        # self.b = b(self.o // 2)
-        # self.c = c(i=3, o=self.o // 2, k=7, s=2, p=3)  # 16
 
-        self.c_layer1 = self.make_c_layer(self.o, block_num[0], s=2)
-        self.c_layer2 = self.make_c_layer(self.o, block_num[1], s=2)
-        self.c_layer3 = self.make_c_layer(self.o, block_num[2], s=2)
-        self.c_layer4 = self.make_c_layer(self.o, block_num[3], s=2)
-        self.c_layer5 = self.make_c_layer(self.o, block_num[4], s=2)
-        self.c_layer6 = self.make_c_layer(self.o, block_num[4], s=2)
+        self.c_layer1 = self.make_c_layer(32, block_num[0], s=2)
+        self.c_layer2 = self.make_c_layer(64, block_num[1], s=2)
+        self.c_layer3 = self.make_c_layer(128, block_num[2], s=2)
+        self.c_layer4 = self.make_c_layer(256, block_num[3], s=2)
+        self.c_layer5 = self.make_c_layer(512, block_num[4], s=2)
+        # self.c_layer6 = self.make_c_layer(1024, block_num[5], s=2)
 
-        self.o //= 4
-
-        self.d_layer6 = self.make_d_layer(self.o, block_num[4], s=2)
-        self.d_layer5 = self.make_d_layer(self.o, block_num[4], s=2)
-        self.d_layer4 = self.make_d_layer(self.o, block_num[3], s=2)
-        self.d_layer3 = self.make_d_layer(self.o, block_num[2], s=2)
-        self.d_layer2 = self.make_d_layer(self.o, block_num[1], s=2)
+        # self.d_layer6 = self.make_d_layer(512, block_num[5], s=2)
+        self.d_layer5 = self.make_d_layer(256, block_num[4], s=2)
+        self.d_layer4 = self.make_d_layer(128, block_num[3], s=2)
+        self.d_layer3 = self.make_d_layer(64, block_num[2], s=2)
+        self.d_layer2 = self.make_d_layer(32, block_num[1], s=2)
         self.d_layer1 = self.make_d_layer(1, block_num[0], s=2)
-
-        self.o = 64
 
         self.f1 = f(2048, 2048)
         self.f2 = f(4096, 4096)
 
         self.r = r()
-        self.b1 = b(64)
-        self.c1 = c(i=1, o=64, k=1, s=1, p=0)  # 16self.r = r()
-        self.b2 = b(64)
-        self.c2 = c(i=64, o=64, k=1, s=1, p=0)  # 16
+        self.b1 = b(96)
+        self.c1 = c(i=16, o=96, k=1, s=1, p=0)  # 16self.r = r()
+        self.b2 = b(96)
+        self.c2 = c(i=96, o=96, k=1, s=1, p=0)  # 16
         self.b3 = b(1)
-        self.c3 = c(i=64, o=1, k=1, s=1, p=0)  # 16
+        self.c3 = c(i=96, o=1, k=1, s=1, p=0)  # 16
 
     def make_c_layer(self, o, num_blocks, s, k=3, p=1):
-        if o == 64:
+        if o == 32:
             layers = [c_block(1, o, k=k, s=s, p=p)]
             for _ in range(num_blocks - 1):
                 layers.append(c_block(o, o, k=k, s=1, p=p))
@@ -67,64 +59,68 @@ class HGN(nn.Module):
             for _ in range(num_blocks - 1):
                 layers.append(c_block(o, o, k=k, s=1, p=p))
 
-        self.o = o * 2
         net = nn.Sequential(*layers)
         net.apply(init_weights)
         return net
 
     def make_d_layer(self, o, num_blocks, s, k=3, p=1):
         if o == 1:
-            layers = [d_block(self.o * 2, 1, k=k, s=s, p=p)]
+            layers = [d_block(32, 1, k=k, s=s, p=p)]
             for _ in range(num_blocks - 1):
                 layers.append(d_block(1, 1, k=k, s=1, p=p))
         else:
             layers = [d_block(o * 2, o, k=k, s=s, p=p)]
             for _ in range(num_blocks - 1):
                 layers.append(d_block(o, o, k=k, s=1, p=p))
-            self.o = o // 2
 
         net = nn.Sequential(*layers)
         net.apply(init_weights)
         return net
 
     def forward(self, x):
-        """
-        input: [64,64,1] image
-        output: [64,64,1] hologram
-        """
+        """ forward function"""
 
         """ encoder """
-        x1 = self.c_layer1(x)  # [3,64,64]    >>  [64,32,32]
+        x1 = self.c_layer1(x)  # [1,64,64]    >>  [64,32,32]
         x2 = self.c_layer2(x1)  # [64,32,32]   >>  [128,16,16]
-        x3 = self.c_layer3(x2)  # [128,32,32]  >>  [256,8,8]
-        x4 = self.c_layer4(x3)  # [256,32,32]  >>  [512,4,4]
-        x5 = self.c_layer5(x4)  # [256,32,32]  >>  [512,4,4]
-        x6 = self.c_layer6(x5)  # [256,32,32]  >>  [512,4,4]
+        x3 = self.c_layer3(x2)  # [128,16,16]  >>  [256,8,8]
+        x4 = self.c_layer4(x3)  # [256,8,8]  >>  [512,4,4]
+        x5 = self.c_layer5(x4)  # [512,4,4]  >>  [1024,2,2]
 
-        x7 = v1(x6)
-        x8 = self.r(self.f1(x7))
-        x9 = v2(x8, [2048, 1, 1])
+        """ fc layer """
+        y1 = x5
+        y2 = v1(y1)
+        y3 = self.r(self.f1(y2))
+        y4 = v2(y3, [512, 2, 2])
 
         """decoder"""
-        x10 = self.d_layer6(x9) + x5  # [512,4,4]    >>  [256,8,8]
-        x11 = self.d_layer5(x10) + x4  # [512,4,4]    >>  [256,8,8]
-        x12 = self.d_layer4(x11) + x3  # [512,4,4]    >>  [256,8,8]
-        x13 = self.d_layer3(x12)  # [256,8,8]    >>  [128,16,16]
-        x14 = self.d_layer2(x13)  # [128,16,16]  >>  [64,32,32]
-        
-        x15 = self.d_layer1(x14)  # [64,32,32]   >>  [1,64,64]
+        z6 = y4
+        z4 = self.d_layer5(z6) + x4  # [1024,2,2]    >>  [512,4,4]
+        z3 = self.d_layer4(z4) + x3  # [512,4,4]    >>  [256,8,8]
+        z2 = self.d_layer3(z3)  # [256,8,8]    >>  [128,16,16]
+        z1 = self.d_layer2(z2)  # [128,8,8]    >>  [64,16,16]
+        z0 = self.d_layer1(z1)  # [64,16,16]  >>  [1,32,32]
 
-        y = x15
-        y = v1(y)
-        y = self.r(self.f2(y))
-        y = v2(y, [1, 64, 64])
-        y = n(y)
+        """ fc layer """
+        w1 = z0
+        w2 = v1(w1)
+        w3 = self.r(self.f2(w2))
+        w4 = v2(w3, [1, 64, 64])
+        w5 = n(w4)
+
+        """ 1x1 
+        w1 = z0
+        w2 = self.r(self.b1(self.c1(w1)))
+        w3 = self.r(self.b2(self.c2(w2)))
+        w4 = self.r(self.b3(self.c3(w3)))
+        w5 = n(w4)
+        """
 
         """processing"""
-        z = y
-        z = torch.stack((torch.cos(z * 2 * math.pi), torch.sin(z * 2 * math.pi)), dim=4)
-        z = torch.fft(z, 2)
-        z = torch.sqrt(z[:, :, :, :, 0].pow(2) + z[:, :, :, :, 1].pow(2))
-        z = n(z)
+        p1 = w5
+        p2 = torch.stack((torch.cos(p1 * 2 * math.pi), torch.sin(p1 * 2 * math.pi)), dim=4)
+        p3 = torch.fft(p2, 2)
+        p4 = torch.sqrt(p3[:, :, :, :, 0].pow(2) + p3[:, :, :, :, 1].pow(2))
+        p5 = n(p4)
 
-        return y, z
+        return w5, p5

@@ -3,3 +3,5 @@ results
 models
 *.pyc
 test_*
+layers
+hc
