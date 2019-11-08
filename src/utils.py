@@ -8,6 +8,23 @@ import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 
 
+def make_labels(batch_size):
+    real_label = torch.FloatTensor(batch_size)
+    real_label = fill_label(real_label, 1)
+    real_label = real_label.cuda()
+
+    fake_label = torch.FloatTensor(batch_size)
+    fake_label = fill_label(fake_label, 0)
+    fake_label = fake_label.cuda()
+    return real_label, fake_label
+
+
+def fill_label(label, value):
+    for i in range(len(label)):
+        label[i] = value
+    return label
+
+
 def visualize_conv_layer(epoch, model):
     img = imread("C:/Users/CodeLab/PycharmProjects/hologram_pytorch/hologram_pytorch/kaist.png")
     t = torch.from_numpy(np.reshape(img, (1, 1, 64, 64)))
@@ -180,31 +197,18 @@ def make_phase_projection(dataset_path):
 """ print """
 
 
-"""
-def print_loss(epoch, seconds, train_loss, valid_loss):
-    h = int(seconds / 3600)
-    seconds = seconds - h * 3600
-    m = int(seconds / 60)
-    seconds = seconds - m * 60
-    s = int(seconds)
-    print(
-        f"[epoch:{epoch:04}] time:{h:02}h {m:02}m {s:02}s, train_loss:{train_loss:.04}, valid_loss:{valid_loss:.04}"
-    )
-"""
-
-
 def print_loss(epoch, seconds, train_loss, valid_loss):
     h, m, s = get_hms(seconds)
     if epoch == 1:
         print("epoch, time, train_loss_holo, valid_loss_holo, train_loss_image, valid_loss_image")
-    print(f"[{epoch:04}] {h:02}h{m:02}m{s:02}s, {train_loss[0]:.04}, {valid_loss[0]:.04}, {train_loss[1]:.04}, {valid_loss[1]:.04}")
+    print(f"[{epoch:04}] {h:02}h{m:02}m{s:02}s, {train_loss:.04}, {valid_loss:.04}")
 
 
 def print_start_time():
     tl, ml = get_time_list()
     print('')
-    print('=====================[   {}{} {}:{}   ]====================='.format(ml[int(tl[0])-1], tl[1], tl[2], tl[3]))
-    print('=====================[   TRAIN START   ]=====================')
+    print('='*25 + '[   {}{} {}:{}   ]'.format(ml[int(tl[0])-1], tl[1], tl[2], tl[3]) + '='*25)
+    print('='*25 + '[   TRAIN START   ]' + '='*25)
     print('')
 
 

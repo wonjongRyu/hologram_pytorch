@@ -23,33 +23,25 @@ class HGN(nn.Module):
 
         """ Layers """
 
-        self.c_layer1 = self.make_c_layer(32, block_num[0], s=2)
-        self.c_layer2 = self.make_c_layer(64, block_num[1], s=2)
-        self.c_layer3 = self.make_c_layer(128, block_num[2], s=2)
-        self.c_layer4 = self.make_c_layer(256, block_num[3], s=2)
-        self.c_layer5 = self.make_c_layer(512, block_num[4], s=2)
-        # self.c_layer6 = self.make_c_layer(1024, block_num[5], s=2)
-
-        # self.d_layer6 = self.make_d_layer(512, block_num[5], s=2)
-        self.d_layer5 = self.make_d_layer(256, block_num[4], s=2)
-        self.d_layer4 = self.make_d_layer(128, block_num[3], s=2)
-        self.d_layer3 = self.make_d_layer(64, block_num[2], s=2)
-        self.d_layer2 = self.make_d_layer(32, block_num[1], s=2)
+        self.c_layer1 = self.make_c_layer(64, block_num[0], s=2)
+        self.c_layer2 = self.make_c_layer(128, block_num[1], s=2)
+        self.c_layer3 = self.make_c_layer(256, block_num[2], s=2)
+        self.c_layer4 = self.make_c_layer(512, block_num[3], s=2)
+        self.c_layer5 = self.make_c_layer(1024, block_num[4], s=2)
+        self.d_layer5 = self.make_d_layer(512, block_num[4], s=2)
+        self.d_layer4 = self.make_d_layer(256, block_num[3], s=2)
+        self.d_layer3 = self.make_d_layer(128, block_num[2], s=2)
+        self.d_layer2 = self.make_d_layer(64, block_num[1], s=2)
         self.d_layer1 = self.make_d_layer(1, block_num[0], s=2)
 
-        self.f1 = f(2048, 2048)
+        self.f1 = f(4096, 4096)
         self.f2 = f(4096, 4096)
+        self.f3 = f(4096, 4096)
 
         self.r = r()
-        self.b1 = b(96)
-        self.c1 = c(i=16, o=96, k=1, s=1, p=0)  # 16self.r = r()
-        self.b2 = b(96)
-        self.c2 = c(i=96, o=96, k=1, s=1, p=0)  # 16
-        self.b3 = b(1)
-        self.c3 = c(i=96, o=1, k=1, s=1, p=0)  # 16
 
     def make_c_layer(self, o, num_blocks, s, k=3, p=1):
-        if o == 32:
+        if o == 64:
             layers = [c_block(1, o, k=k, s=s, p=p)]
             for _ in range(num_blocks - 1):
                 layers.append(c_block(o, o, k=k, s=1, p=p))
@@ -65,7 +57,7 @@ class HGN(nn.Module):
 
     def make_d_layer(self, o, num_blocks, s, k=3, p=1):
         if o == 1:
-            layers = [d_block(32, 1, k=k, s=s, p=p)]
+            layers = [d_block(64, 1, k=k, s=s, p=p)]
             for _ in range(num_blocks - 1):
                 layers.append(d_block(1, 1, k=k, s=1, p=p))
         else:
@@ -91,7 +83,7 @@ class HGN(nn.Module):
         y1 = x5
         y2 = v1(y1)
         y3 = self.r(self.f1(y2))
-        y4 = v2(y3, [512, 2, 2])
+        y4 = v2(y3, [1024, 2, 2])
 
         """decoder"""
         z6 = y4
@@ -108,6 +100,13 @@ class HGN(nn.Module):
         w4 = v2(w3, [1, 64, 64])
         w5 = n(w4)
 
+        """ fc layer """
+        q1 = x
+        q2 = v1(q1)
+        q3 = self.r(self.f3(q2))
+        q4 = v2(q3, [1, 64, 64])
+        q5 = n(q4)
+
         """ 1x1 
         w1 = z0
         w2 = self.r(self.b1(self.c1(w1)))
@@ -117,7 +116,7 @@ class HGN(nn.Module):
         """
 
         """processing"""
-        p1 = w5
+        p1 = w5+q5
         p2 = torch.stack((torch.cos(p1 * 2 * math.pi), torch.sin(p1 * 2 * math.pi)), dim=4)
         p3 = torch.fft(p2, 2)
         p4 = torch.sqrt(p3[:, :, :, :, 0].pow(2) + p3[:, :, :, :, 1].pow(2))

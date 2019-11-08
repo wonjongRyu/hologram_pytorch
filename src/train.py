@@ -3,34 +3,38 @@ import torch.optim as optim
 from utils import *
 import time
 from test import test
+from data import data_loader1, data_loader2
 
 
-def train(args, model, train_loader, valid_loader, test_loader):
+def train(args, G, D):
     """ train function """
-
     """ Print start time """
     print_start_time()
 
     """ Train model and validate it """
     since = time.time()
-    for epoch in range(1, args.epoch_num+1):
+
+    """ Start iteration """
+    for epoch in range(1, args.epoch_max+1):
+
         """ run 1 epoch and get loss """
-        train_loss = iteration(args, model, train_loader, phase="train")
-        valid_loss = iteration(args, model, valid_loader, phase="valid")
+        train_loader, valid_loader, test_loader = data_loader1(args)
+        train_loss = iteration_GAN(args, G, D, train_loader, phase="train")
+        valid_loss = iteration_GAN(args, G, D, valid_loader, phase="valid")
 
         """ Print loss """
         if (epoch % args.print_period_error) == 0:
             print_loss(epoch, time.time()-since, train_loss, valid_loss)
-            record_loss(args, epoch, time.time()-since, train_loss, valid_loss)
+            # record_loss(args, epoch, time.time()-since, train_loss, valid_loss)
 
         """ Print image """
         if (epoch % args.print_period_image) == 0:
-            test(args, model, test_loader, epoch)
-            visualize_conv_layer(epoch, model)
+            test(args, G, test_loader, epoch)
+            # visualize_conv_layer(epoch, model)
 
         """ Change the ratio of losses """
-        if epoch == args.change_loss_ratio_at:
-            args.loss_ratio = 0
+        # if epoch == args.change_loss_ratio_at:
+        #    args.loss_ratio = 0
 
         """ Decay Learning Rate """
         if (epoch % args.lr_decay_period) == 0:
@@ -39,49 +43,134 @@ def train(args, model, train_loader, valid_loader, test_loader):
     print('======================[ train finished ]======================')
 
 
-def iteration(args, model, data_loader, phase="train"):
+def iteration_CGH(args, G, data_loader, phase="train"):
+        """ iteration function """
+
+        """ Phase setting: train or valid """
+        if phase == "train":
+            G.train()
+        if phase == "valid":
+            G.eval()
+
+        """ Define loss function and optimizer """
+        criterion = nn.MSELoss()
+        optimizer = optim.Adam(G.parameters(), lr=args.learning_rate)
+
+        """ Initialize the loss_sum """
+        loss_sum_holo = 0.0
+        loss_sum_image = 0.0
+
+        """ Start batch iteration """
+        for batch_idx, (image, holo) in enumerate(data_loader):
+
+            """ Transfer data to GPU """
+            if args.is_cuda:
+                image, holo = image.cuda(), holo.cuda()
+
+            """ Run model """
+            hologram, reconimg = G(image)
+
+            """ Calculate batch loss """
+            loss_holo = criterion(hologram, holo)
+            loss_image = criterion(reconimg, image)
+
+            """ Add to get epoch loss """
+            loss_sum_holo += loss_holo.item()
+            loss_sum_image += loss_image.item()  # 여기 item() 없으면 GPU 박살
+
+            """ Back propagation """
+            if phase == "train":
+                optimizer.zero_grad()
+                loss = args.loss_ratio * loss_holo + (1 - args.loss_ratio) * loss_image
+                loss.backward()
+                optimizer.step()
+
+            """ Clear memory """
+            torch.cuda.empty_cache()
+
+        return loss_sum_holo / len(data_loader)
+
+        # return loss_sum_holo / len(data_loader), loss_sum_image / len(data_loader)
+
+
+def iteration_GAN(args, G, D, data_loader, phase="train"):
     """ iteration function """
 
     """ Phase setting: train or valid """
     if phase == "train":
-        model.train()
+        G.train()
+        D.train()
     if phase == "valid":
-        model.eval()
+        G.eval()
+        D.eval()
 
     """ Define loss function and optimizer """
-    criterion = nn.MSELoss()
-    optimizer = optim.Adam(model.parameters(), lr=args.learning_rate)
+    criterion_MSE = nn.MSELoss()
+    criterion_BCE = nn.BCELoss()
+    optimizerD = optim.Adam(D.parameters(), lr=args.learning_rate, betas=(0.5, 0.999))
+    optimizerG = optim.Adam(G.parameters(), lr=args.learning_rate, betas=(0.5, 0.999))
 
     """ Initialize the loss_sum """
-    loss_sum_holo = 0.0
-    loss_sum_image = 0.0
+    I_loss_sum = 0.0
+    """
+    D_real_sum = 0.0
+    D_fake_sum = 0.0
+    I_BCE_sum = 0.0
+    I_MSE_sum = 0.0
+    """
 
     """ Start batch iteration """
-    for batch_idx, (image, holo) in enumerate(data_loader):
+    for batch_idx, image in enumerate(data_loader):
+
+        """ Make labels """
+        real_label, fake_label = make_labels(image.size(0))
 
         """ Transfer data to GPU """
         if args.is_cuda:
-            image, holo = image.cuda(), holo.cuda()
+            image, real_label, fake_label = image.cuda(), real_label.cuda(), fake_label.cuda()
 
         """ Run model """
-        hologram, reconimg = model(image)
+        _, reconimg = G(image)
 
-        """ Calculate batch loss """
-        loss_holo = criterion(hologram, holo)
-        loss_image = criterion(reconimg, image)
+        """ Discriminator """
+        D_real_logits = D(image)
+        D_fake_logits = D(reconimg.detach())
+
+        """ D Loss """
+        D_real_loss = criterion_BCE(D_real_logits, real_label)
+        D_fake_loss = criterion_BCE(D_fake_logits, fake_label)
+
+        """ G Loss """
+        I_BCE_loss = criterion_BCE(D_fake_logits, real_label)
+        I_MSE_loss = criterion_MSE(reconimg, image)
+
+        """ BP """
+        if phase == "train":
+            optimizerD.zero_grad()
+            D_real_loss.backward()
+            D_fake_loss.backward(retain_graph=True)
+            optimizerD.step()
+
+            optimizerG.zero_grad()
+            G_loss = 0.9*I_BCE_loss + 0.1*I_MSE_loss
+            G_loss.backward()
+            # I_BCE_loss.backward()
+            # I_MSE_loss.backward()
+            optimizerG.step()
 
         """ Add to get epoch loss """
-        loss_sum_holo += loss_holo.item()
-        loss_sum_image += loss_image.item()  # 여기 item() 없으면 GPU 박살
+        I_loss_sum += I_MSE_loss.item()    # 여기 item() 없으면 GPU
 
-        """ Back propagation """
-        if phase == "train":
-            optimizer.zero_grad()
-            loss = args.loss_ratio*loss_holo+(1-args.loss_ratio)*loss_image
-            loss.backward()
-            optimizer.step()
+        """
+        D_real_sum += D_real_loss.item()
+        D_fake_sum += D_fake_loss.item()
+        I_BCE_sum += I_BCE_loss.item()
+        I_MSE_sum += I_MSE_loss.item()
+        """
 
         """ Clear memory """
         torch.cuda.empty_cache()
 
-    return loss_sum_holo/len(data_loader), loss_sum_image/len(data_loader)
+    # return D_real_sum/len(data_loader), D_fake_sum/len(data_loader), I_BCE_sum/len(data_loader), I_MSE_sum/len(data_loader)
+
+    return I_loss_sum/len(data_loader)

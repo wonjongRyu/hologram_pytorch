@@ -3,9 +3,9 @@ import torch.nn as nn
 import torch
 
 
-class _netD(nn.Module):
+class netD(nn.Module):
     def __init__(self):
-        super(_netD, self).__init__()
+        super(netD, self).__init__()
         # Filter size of discriminator
         ndf = 64
         # Output image channels
@@ -13,26 +13,26 @@ class _netD(nn.Module):
         self.main = nn.Sequential(
             # input is (nc) x 64 x 64
             nn.Conv2d(nc, ndf, 4, 2, 1, bias=False),
-            nn.LeakyReLU(0.2, inplace=True),
+            r(),
             # state size. (ndf) x 32 x 32
             nn.Conv2d(ndf, ndf * 2, 4, 2, 1, bias=False),
             nn.BatchNorm2d(ndf * 2),
-            nn.LeakyReLU(0.2, inplace=True),
+            r(),
             # state size. (ndf*2) x 16 x 16
             nn.Conv2d(ndf * 2, ndf * 4, 4, 2, 1, bias=False),
             nn.BatchNorm2d(ndf * 4),
-            nn.LeakyReLU(0.2, inplace=True),
+            r(),
             # state size. (ndf*4) x 8 x 8
             nn.Conv2d(ndf * 4, ndf * 8, 4, 2, 1, bias=False),
             nn.BatchNorm2d(ndf * 8),
-            nn.LeakyReLU(0.2, inplace=True),
+            r(),
             # state size. (ndf*8) x 4 x 4
             nn.Conv2d(ndf * 8, 1, 4, 1, 0, bias=False),
-            nn.tanh()
+            nn.Sigmoid()
         )
 
-    def forward(self, input):
-        output = self.main(input)
+    def forward(self, img):
+        output = self.main(img)
         return output.view(-1, 1).squeeze(1)
 
 
