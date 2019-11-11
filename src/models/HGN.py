@@ -17,7 +17,7 @@ def init_weights(m):
         m.bias.data.zero_()
 
 
-class HGN(nn.Module):
+class HGN_GAN(nn.Module):
     def __init__(self, block_num):
         super(HGN, self).__init__()
 

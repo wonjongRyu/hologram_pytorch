@@ -1,11 +1,53 @@
 import csv, time
-from os.path import join
 from glob import glob
 from ops import LayerActivations
 import numpy as np
 import torch, cv2, os
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
+
+
+""" Make output directories """
+
+
+def make_output_folders(args):
+    make_output_folder(args)
+    make_image_folder(args)
+    make_model_folder(args)
+    make_csv_file(args)
+
+
+def make_output_folder(args):
+    tl, _ = get_time_list()
+    args.save_path_of_outputs = '../outputs/' + tl[0] + '_' + tl[1] + '_' + tl[2] + '_' + tl[3]
+    check_and_make_folder(args.save_path_of_outputs)
+
+
+def make_image_folder(args):
+    args.save_path_of_images = args.save_path_of_outputs + '/images'
+    check_and_make_folder(args.save_path_of_images)
+
+
+def make_model_folder(args):
+    args.save_path_of_models = args.save_path_of_outputs + '/models'
+    check_and_make_folder(args.save_path_of_models)
+
+
+def make_csv_file(args):
+    args.save_path_of_loss = args.save_path_of_outputs + '/loss.csv'
+    f = open(args.save_path_of_loss, "a", encoding="utf-8", newline="")
+    wr = csv.writer(f)
+    wr.writerow(["epoch", "time", "train_loss_holo", "train_loss_image", "valid_loss_holo", "valid_loss_image"])
+    f.close()
+
+
+def check_and_make_folder(folder):
+    if not os.path.exists(folder):
+        os.makedirs(folder)
+
+
+
+""" etc """
 
 
 def make_labels(batch_size):
@@ -56,13 +98,13 @@ def visualize_conv_layer(epoch, model):
         save_path = "C:/Users/CodeLab/PycharmProjects/hologram_pytorch/hologram_pytorch/layers/layer3_"+str(i+1)+'_'+str(epoch)+'.png'
         imwrite(act[0][i], save_path)
 
+
 """check arguments"""
 
 
 def check_args(args):
     # --checkpoint_dir
-    make_result_folder(args)
-    make_loss_file(args)
+
     return args
 
 
@@ -235,19 +277,6 @@ def get_hms(seconds):
     return h, m, s
 
 
-""" directories """
-
-
-def make_result_folder(args):
-    tl, _ = get_time_list()
-    args.save_image_path = '../results/' + tl[0] + '_' + tl[1] + '_' + tl[2] + '_' + tl[3]
-    check_folder(args.save_image_path)
-
-
-def check_folder(folder):
-    if not os.path.exists(folder):
-        os.makedirs(folder)
-
 
 """ ckpt """
 
@@ -266,19 +295,10 @@ def ckpt(model):
 """ csv record """
 
 
-def make_loss_file(args):
-    tl, _ = get_time_list()
-    args.save_loss_path = '../results/' + tl[0] + '_' + tl[1] + '_' + tl[2] + '_' + tl[3] + '.csv'
-    f = open(args.save_loss_path, "a", encoding="utf-8", newline="")
-    wr = csv.writer(f)
-    wr.writerow(["epoch", "time", "train_loss_holo", "train_loss_image", "valid_loss_holo", "valid_loss_image"])
-    f.close()
-
-
-def record_loss(args, epoch, seconds, train_loss, valid_loss):
+def record_on_csv(args, epoch, seconds, train_loss, valid_loss):
     h, m, s = get_hms(seconds)
     hms = str(h) + 'h' + str(m) + 'm' + str(s) + 's'
-    f = open(args.save_loss_path, "a", encoding="utf-8", newline="")
+    f = open(args.save_path_of_loss, "a", encoding="utf-8", newline="")
     wr = csv.writer(f)
     wr.writerow([epoch, hms, train_loss[0], valid_loss[0], train_loss[1], valid_loss[1]])
     f.close()

@@ -28,7 +28,7 @@ def test(args, model, test_loader, epoch):
 
         """ print images """
         for i in range(len(test_loader.dataset)):
-            # save_holo_path = join(args.save_image_path, str(i + 1) + '_holo_' + str(epoch) + '.png')
-            save_output_path = join(args.save_image_path, str(i+1)+'_output_'+str(epoch)+'.png')
-            # imwrite(hologram[i], save_holo_path)
+            save_holo_path = join(args.save_path_of_image, str(i + 1) + '_holo_' + str(epoch) + '.png')
+            save_output_path = join(args.save_path_of_image, str(i+1)+'_output_'+str(epoch)+'.png')
+            imwrite(hologram[i], save_holo_path)
             imwrite(reconimg[i], save_output_path)

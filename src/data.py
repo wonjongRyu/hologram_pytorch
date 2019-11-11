@@ -75,9 +75,9 @@ def data_loader1(args):
     """ Data Loader"""
 
     """ Load image data """
-    train_images = myDataset1(join(args.dataset_path, "train"))
-    valid_images = myDataset1(join(args.dataset_path, "valid"))
-    test_images = myDataset1(join(args.dataset_path, "test"))
+    train_images = myDataset1(join(args.path_of_dataset, "train"))
+    valid_images = myDataset1(join(args.path_of_dataset, "valid"))
+    test_images = myDataset1(join(args.path_of_dataset, "test"))
 
     """ Wrap them with DataLoader structure """
     train_loader = DataLoader(train_images, batch_size=args.batch_size, shuffle=True)
@@ -91,9 +91,9 @@ def data_loader2(args):
     """ Data Loader"""
 
     """ Load image data """
-    train_images = myDataset2(join(args.dataset_path, "train"))
-    valid_images = myDataset2(join(args.dataset_path, "valid"))
-    test_images = myDataset2(join(args.dataset_path, "test"))
+    train_images = myDataset2(join(args.path_of_dataset, "train"))
+    valid_images = myDataset2(join(args.path_of_dataset, "valid"))
+    test_images = myDataset2(join(args.path_of_dataset, "test"))
 
     """ Wrap them with DataLoader structure """
     train_loader = DataLoader(train_images, batch_size=args.batch_size, shuffle=True)

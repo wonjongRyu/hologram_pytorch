@@ -11,6 +11,9 @@ def train(args, G, D):
     """ Print start time """
     print_start_time()
 
+    """ Make output directories """
+    make_output_folders(args)
+
     """ Train model and validate it """
     since = time.time()
 
@@ -23,22 +26,22 @@ def train(args, G, D):
         valid_loss = iteration_GAN(args, G, D, valid_loader, phase="valid")
 
         """ Print loss """
-        if (epoch % args.print_period_error) == 0:
+        if (epoch % args.print_cycle_of_loss) == 0:
             print_loss(epoch, time.time()-since, train_loss, valid_loss)
             # record_loss(args, epoch, time.time()-since, train_loss, valid_loss)
 
         """ Print image """
-        if (epoch % args.print_period_image) == 0:
+        if (epoch % args.print_cycle_of_image) == 0:
             test(args, G, test_loader, epoch)
             # visualize_conv_layer(epoch, model)
 
         """ Change the ratio of losses """
-        # if epoch == args.change_loss_ratio_at:
+        # if epoch == args.change_cycle_of_loss_ratio:
         #    args.loss_ratio = 0
 
         """ Decay Learning Rate """
-        if (epoch % args.lr_decay_period) == 0:
-            args.learning_rate = args.learning_rate/args.lr_decay_param
+        if (epoch % args.decay_cycle_of_learning_rate) == 0:
+            args.learning_rate = args.learning_rate/args.decay_coefficient_of_learning_rate
 
     print('======================[ train finished ]======================')
 
@@ -64,7 +67,7 @@ def iteration_CGH(args, G, data_loader, phase="train"):
         for batch_idx, (image, holo) in enumerate(data_loader):
 
             """ Transfer data to GPU """
-            if args.is_cuda:
+            if args.is_cuda_available:
                 image, holo = image.cuda(), holo.cuda()
 
             """ Run model """
@@ -126,7 +129,7 @@ def iteration_GAN(args, G, D, data_loader, phase="train"):
         real_label, fake_label = make_labels(image.size(0))
 
         """ Transfer data to GPU """
-        if args.is_cuda:
+        if args.is_cuda_available:
             image, real_label, fake_label = image.cuda(), real_label.cuda(), fake_label.cuda()
 
         """ Run model """
