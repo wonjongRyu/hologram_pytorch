@@ -1,6 +1,6 @@
 import argparse
-from models.HGN import HGN_GAN
-from train import train
+from models.HGN import HGN
+from train_CGH import train_CGH
 from test import test
 from torchsummary import summary
 from data import *
@@ -13,7 +13,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Hologram Generation Net")
 
     """ Dataset Path """
-    parser.add_argument("--path_of_dataset", type=str, default="../dataset_test")
+    parser.add_argument("--path_of_dataset", type=str, default="../dataset/4000")
 
     """ Training Condition """
     parser.add_argument("--use_preTrained_model", type=int, default=False)
@@ -33,19 +33,26 @@ def parse_args():
 
     """ Print Cycles """
     parser.add_argument("--print_cycle_of_loss", type=int, default=10)
-    parser.add_argument("--print_cycle_of_image", type=int, default=100)
+    parser.add_argument("--print_cycle_of_images", type=int, default=100)
 
     """ Save Paths """
     parser.add_argument("--save_path_of_outputs", type=str, default="../outputs")
-    parser.add_argument("--save_path_of_image", type=str, default="../outputs/images")
-    parser.add_argument("--save_path_of_model", type=str, default="../outputs/models")
+    parser.add_argument("--save_path_of_images", type=str, default="../outputs/images")
+    parser.add_argument("--save_path_of_models", type=str, default="../outputs/models")
     parser.add_argument("--save_path_of_loss", type=str, default="../outputs/loss")
 
     return check_args(parser.parse_args())
 
 
 def main():
-    """ Main function """
+    """ Main function
+
+    G: Generative Model
+    D: Discriminative Model
+    args: pre-Defined arguments
+    summary: show all parameters in model
+
+    """
 
     """ Load Arguments """
     args = parse_args()
@@ -54,19 +61,19 @@ def main():
     args.is_cuda_available = torch.cuda.is_available()
 
     """ Define Network """
-    G = HGN_GAN(args.list_of_block_numbers)
-    G.load_state_dict(torch.load("../models/GANfc.pt"))
-    D = netD()
+    G = HGN(args.list_of_block_numbers)
+    # G.load_state_dict(torch.load("../models/GANfc.pt"))
+    # D = netD()
 
     if args.is_cuda_available:
         G.cuda()
-        D.cuda()
+        # D.cuda()
 
     """ check parameter """
-    # summary(model, (1, 64, 64))
+    summary(G, (1, 64, 64))
 
     """ Train model """
-    train(args, G, D)
+    train_CGH(args, G)
 
     """ save model """
     # torch.save(G.state_dict(), "../models/GANfc.pt")

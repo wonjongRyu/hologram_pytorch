@@ -122,8 +122,7 @@ def gs_algorithm(img, iteration_num):
     """rgb2gray"""
 
     """Add Random Phase"""
-    img_with_random_phase = add_random_phase(img)
-    hologram = np.fft.ifft2(img_with_random_phase)
+    hologram = np.fft.ifft2(img)
 
     """Iteration"""
     for i in range(iteration_num):
@@ -132,8 +131,6 @@ def gs_algorithm(img, iteration_num):
 
     """Normalization"""
     hologram = normalize_img(np.angle(hologram))
-    # reconimg = normalize_img(np.abs(reconimg))
-    # return hologram, reconimg
     return hologram
 
 
@@ -167,19 +164,22 @@ def make_holograms(dataset_path):
     len_valid = len(glob(os.path.join(valid_image, "images/*.*")))
     len_test = len(glob(os.path.join(test_image, "images/*.*")))
 
+    print("Start Train Folder")
     for i in range(len_train):
         img = imread(os.path.join(train_image, "images/" + str(i+1)+".png"))
-        hologram = gs_algorithm(img, 10)
+        hologram = gs_algorithm(img, 100)
         imwrite(hologram, os.path.join(train_image, "holograms/"+str(i+1)+".png"))
 
+    print("Start Valid Folder")
     for i in range(len_valid):
         img = imread(os.path.join(valid_image, "images/" + str(i + 1) + ".png"))
-        hologram = gs_algorithm(img, 10)
+        hologram = gs_algorithm(img, 100)
         imwrite(hologram, os.path.join(valid_image, "holograms/" + str(i + 1) + ".png"))
 
+    print("Start Test Folder")
     for i in range(len_test):
         img = imread(os.path.join(test_image, "images/" + str(i + 1) + ".png"))
-        hologram = gs_algorithm(img, 10)
+        hologram = gs_algorithm(img, 100)
         imwrite(hologram, os.path.join(test_image, "holograms/" + str(i + 1) + ".png"))
 
 
@@ -300,7 +300,7 @@ def record_on_csv(args, epoch, seconds, train_loss, valid_loss):
     hms = str(h) + 'h' + str(m) + 'm' + str(s) + 's'
     f = open(args.save_path_of_loss, "a", encoding="utf-8", newline="")
     wr = csv.writer(f)
-    wr.writerow([epoch, hms, train_loss[0], valid_loss[0], train_loss[1], valid_loss[1]])
+    wr.writerow([epoch, hms, train_loss, valid_loss])
     f.close()
 
 
