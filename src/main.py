@@ -1,7 +1,6 @@
 import argparse
-from models.HGN import HGN
-from train_CGH import train_CGH
-from test import test
+from models.HGN import HGN_sincos
+from train_img import train_img
 from torchsummary import summary
 from data import *
 from ops import netD
@@ -23,7 +22,7 @@ def parse_args():
     parser.add_argument("--batch_size", type=int, default=64)
 
     """ Learning Rate """
-    parser.add_argument("--learning_rate", type=float, default=0.00001)
+    parser.add_argument("--learning_rate", type=float, default=0.0001)
     parser.add_argument("--decay_coefficient_of_learning_rate", type=float, default=3)
     parser.add_argument("--decay_cycle_of_learning_rate", type=int, default=500)
 
@@ -33,7 +32,7 @@ def parse_args():
 
     """ Print Cycles """
     parser.add_argument("--print_cycle_of_loss", type=int, default=10)
-    parser.add_argument("--print_cycle_of_images", type=int, default=100)
+    parser.add_argument("--print_cycle_of_images", type=int, default=20)
 
     """ Save Paths """
     parser.add_argument("--save_path_of_outputs", type=str, default="../outputs")
@@ -61,7 +60,7 @@ def main():
     args.is_cuda_available = torch.cuda.is_available()
 
     """ Define Network """
-    G = HGN(args.list_of_block_numbers)
+    G = HGN_sincos(args.list_of_block_numbers)
     # G.load_state_dict(torch.load("../models/GANfc.pt"))
     # D = netD()
 
@@ -73,7 +72,7 @@ def main():
     summary(G, (1, 64, 64))
 
     """ Train model """
-    train_CGH(args, G)
+    train_img(args, G)
 
     """ save model """
     # torch.save(G.state_dict(), "../models/GANfc.pt")
