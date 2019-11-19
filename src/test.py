@@ -2,11 +2,11 @@ from utils import *
 from os.path import join
 
 
-def test(args, model, test_loader, epoch):
+def test(args, G, test_loader, epoch):
     """ test function """
 
     """ set to eval mode """
-    model.eval()
+    G.eval()
 
     """ Batch Iteration """
     for batch_idx, image in enumerate(test_loader):
@@ -16,15 +16,23 @@ def test(args, model, test_loader, epoch):
             image = image.cuda()
 
         """ Run Model """
-        reconimg = model(image)
+        reconimg, cos, sin = G(image)
 
         """ reduce dimension to make images """
         reconimg = torch.squeeze(reconimg)
+        cos = torch.squeeze(cos)
+        sin = torch.squeeze(sin)
 
         """ torch to numpy """
         reconimg = reconimg.cpu().detach().numpy()
+        img = image.cpu().detach().numpy()
+        cos = cos.cpu().detach().numpy()
+        sin = sin.cpu().detach().numpy()
 
         """ print images """
         for i in range(len(test_loader.dataset)):
-            save_reconimg_path = args.save_path_of_images+'/R'+str(i+1)+'_'+str(epoch)+'.png'
+            save_reconimg_path = args.save_path_of_images+'/img'+str(i+1)+'_'+str(epoch)+'_R.png'
+            save_gsimg_path = args.save_path_of_images+'/img'+str(i+1)+'_'+str(epoch)+'_GS1.png'
+            gsimg = gs1time(img[i], cos[i], sin[i])
             imwrite(reconimg[i], save_reconimg_path)
+            imwrite(gsimg, save_gsimg_path)

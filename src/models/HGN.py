@@ -39,7 +39,7 @@ class HGN_sincos(nn.Module):
         self.f3 = f(4096, 4096)
 
         self.r = r()
-        self.l = l(0.2)
+        self.t = t()
 
     def make_c_layer(self, o, num_blocks, s, k=3, p=1):
         if o == 64:
@@ -97,7 +97,7 @@ class HGN_sincos(nn.Module):
         """ fc layer for sin(phi)"""
         w11 = z10
         w12 = v1(w11)
-        w13 = self.f2(w12)
+        w13 = self.t(self.f2(w12))
         w14 = v2(w13, [1, 64, 64])
 
         """decoder for cos(phi)"""
@@ -111,7 +111,7 @@ class HGN_sincos(nn.Module):
         """ fc layer for cos(phi)"""
         w21 = z20
         w22 = v1(w21)
-        w23 = self.f3(w22)
+        w23 = self.t(self.f3(w22))
         w24 = v2(w23, [1, 64, 64])
 
         """processing"""
@@ -120,7 +120,7 @@ class HGN_sincos(nn.Module):
         p3 = torch.sqrt(p2[:, :, :, :, 0].pow(2) + p2[:, :, :, :, 1].pow(2))
         p4 = n(p3)
 
-        return p4
+        return p4, w24, w14
 
 
 class HGN(nn.Module):
@@ -144,7 +144,7 @@ class HGN(nn.Module):
         self.f2 = f(4096, 4096)
 
         self.r = r()
-        self.l = l(0.2)
+        self.t = t()
 
     def make_c_layer(self, o, num_blocks, s, k=3, p=1):
         if o == 64:
@@ -202,11 +202,17 @@ class HGN(nn.Module):
         """ fc layer """
         w1 = z0
         w2 = v1(w1)
-        w3 = self.l(self.f2(w2))
+        w3 = self.t(self.f2(w2))
         w4 = v2(w3, [1, 64, 64])
-        w5 = n(w4)
 
-        return w5
+        """processing"""
+        p1 = w4
+        p2 = torch.stack((torch.cos(p1 * math.pi), torch.sin(p1 * math.pi)), dim=4)
+        p3 = torch.fft(p2, 2)
+        p4 = torch.sqrt(p3[:, :, :, :, 0].pow(2) + p3[:, :, :, :, 1].pow(2))
+        p5 = n(p4)
+
+        return p5
 
 
 class HGN_GAN(nn.Module):
@@ -291,7 +297,6 @@ class HGN_GAN(nn.Module):
         w3 = self.r(self.f2(w2))
         w4 = v2(w3, [1, 64, 64])
         w5 = n(w4)
-
 
         """processing"""
         p1 = w5

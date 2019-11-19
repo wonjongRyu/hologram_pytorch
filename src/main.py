@@ -32,7 +32,8 @@ def parse_args():
 
     """ Print Cycles """
     parser.add_argument("--print_cycle_of_loss", type=int, default=10)
-    parser.add_argument("--print_cycle_of_images", type=int, default=20)
+    parser.add_argument("--print_cycle_of_images", type=int, default=50)
+    parser.add_argument("--save_cycle_of_models", type=int, default=500)
 
     """ Save Paths """
     parser.add_argument("--save_path_of_outputs", type=str, default="../outputs")
@@ -75,7 +76,7 @@ def main():
     train_img(args, G)
 
     """ save model """
-    # torch.save(G.state_dict(), "../models/GANfc.pt")
+    torch.save(G.state_dict(), "../models/HGN_sincos_loss_finished.pt")
 
 
 if __name__ == "__main__":

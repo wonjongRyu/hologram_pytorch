@@ -1,6 +1,7 @@
 import torch.nn as nn
 import torch.optim as optim
 from utils import *
+from ops import *
 import time
 from test import test
 from data import data_loader1
@@ -24,7 +25,7 @@ def train_img(args, G):
         """ Print loss """
         if (epoch % args.print_cycle_of_loss) == 0:
             print_loss(epoch, time.time()-since, train_loss, valid_loss)
-            record_on_csv(args, epoch, time.time()-since, train_loss, valid_loss)
+            # record_on_csv(args, epoch, time.time()-since, train_loss, valid_loss)
 
         """ Print image """
         if (epoch % args.print_cycle_of_images) == 0:
@@ -38,6 +39,10 @@ def train_img(args, G):
         """ Decay Learning Rate """
         # if (epoch % args.decay_cycle_of_learning_rate) == 0:
         #     args.learning_rate = args.learning_rate/args.decay_coefficient_of_learning_rate
+
+        """ Save model """
+        if (epoch % args.save_cycle_of_models) == 0:
+            torch.save(G.state_dict(), args.save_path_of_models + "/HGN_sincos_train_finished" + str(epoch) + ".pt")
 
     print('======================[ train finished ]======================')
 
@@ -57,6 +62,7 @@ def iteration(args, G, data_loader, phase):
 
         """ Initialize the loss_sum """
         loss_sum_image = 0.0
+        loss_sum_sincos = 0.0
 
         """ Start batch iteration """
         for batch_idx, image in enumerate(data_loader):
@@ -66,21 +72,24 @@ def iteration(args, G, data_loader, phase):
                 image = image.cuda()
 
             """ Run model """
-            reconimg = G(image)
+            reconimg, cos, sin = G(image)
 
             """ Calculate batch loss """
             loss_image = criterion(reconimg, image)
+            loss_sincos = sin_cos_loss(sin, cos)
+            loss = loss_image + 0.05*loss_sincos
 
             """ Back propagation """
             if phase == "train":
                 optimizer.zero_grad()
-                loss_image.backward()
+                loss.backward()
                 optimizer.step()
 
             """ Add to get epoch loss """
             loss_sum_image += loss_image.item()  # 여기 item() 없으면 GPU 박살
+            loss_sum_sincos += loss_sincos.item()  # 여기 item() 없으면 GPU 박살
 
             """ Clear memory """
             torch.cuda.empty_cache()
 
-        return loss_sum_image / len(data_loader)
+        return loss_sum_image / len(data_loader), loss_sum_sincos / len(data_loader)

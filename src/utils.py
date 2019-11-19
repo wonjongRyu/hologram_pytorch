@@ -111,6 +111,13 @@ def check_args(args):
 """gs algorithm"""
 
 
+def gs1time(img, cos, sin):
+    reconimg = np.fft.fft2(cos + 1j * sin)
+    hologram = np.fft.ifft2(np.multiply(img, np.exp(1j * np.angle(reconimg))))
+    reconimg = abs(np.fft.fft2(np.exp(1j * np.angle(hologram))))
+    return reconimg[0, :, :]
+
+
 def add_random_phase(img):
     size = img.shape[0]
     random_phase = np.exp(1j * 2 * np.pi * np.random.rand(size, size))  # random phase
@@ -243,7 +250,7 @@ def print_loss(epoch, seconds, train_loss, valid_loss):
     h, m, s = get_hms(seconds)
     if epoch == 1:
         print("epoch, time, train_loss_holo, valid_loss_holo, train_loss_image, valid_loss_image")
-    print(f"[{epoch:04}] {h:02}h{m:02}m{s:02}s, {train_loss:.04}, {valid_loss:.04}")
+    print(f"[{epoch:04}] {h:02}h{m:02}m{s:02}s, {train_loss[0]:.04}, {train_loss[1]:.04}, {valid_loss[0]:.04}, {valid_loss[1]:.04}")
 
 
 def print_start_time():

@@ -6,3 +6,6 @@ test_*
 layers
 hc
 outputs
+*.m
+kaist*
+x*

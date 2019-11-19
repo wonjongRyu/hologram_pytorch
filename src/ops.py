@@ -131,6 +131,9 @@ def r():
 def l(alpha):
     return nn.LeakyReLU(alpha)
 
+def t():
+    return nn.Tanh()
+
 
 """ Batch Normalization """
 
@@ -141,6 +144,11 @@ def b(channels):
 
 """Loss Functions"""
 
+
+def sin_cos_loss(cos, sin):
+    loss = (cos.pow(2) + sin.pow(2) - 1).pow(2)
+    loss = loss.sum(0).sum(0).sum(0).sum(0)
+    return loss/(64*64*64)
 
 def do(i):
     return nn.Dropout2d(i)
