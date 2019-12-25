@@ -1,5 +1,5 @@
 import argparse
-from models.HGN import HGN_sincos
+from models.HGN import HGN
 from train_img import train_img
 from torchsummary import summary
 from data import *
@@ -12,13 +12,13 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Hologram Generation Net")
 
     """ Dataset Path """
-    parser.add_argument("--path_of_dataset", type=str, default="../dataset/4000")
+    parser.add_argument("--path_of_dataset", type=str, default="../dataset/object16000_64")
 
     """ Training Condition """
     parser.add_argument("--use_preTrained_model", type=int, default=False)
     parser.add_argument("--is_cuda_available", type=int, default=True)
     parser.add_argument("--list_of_block_numbers", type=list, default=[2, 2, 2, 2, 2])
-    parser.add_argument("--epoch_max", type=int, default=2000)
+    parser.add_argument("--epoch_max", type=int, default=5000)
     parser.add_argument("--batch_size", type=int, default=64)
 
     """ Learning Rate """
@@ -61,7 +61,8 @@ def main():
     args.is_cuda_available = torch.cuda.is_available()
 
     """ Define Network """
-    G = HGN_sincos(args.list_of_block_numbers)
+    # G = DenseNetBC_100_12()
+    G = HGN(args.list_of_block_numbers)
     # G.load_state_dict(torch.load("../models/GANfc.pt"))
     # D = netD()
 
@@ -76,7 +77,7 @@ def main():
     train_img(args, G)
 
     """ save model """
-    torch.save(G.state_dict(), "../models/HGN_sincos_loss_finished.pt")
+    # torch.save(G.state_dict(), "../models/HGN_sincos_loss_finished.pt")
 
 
 if __name__ == "__main__":

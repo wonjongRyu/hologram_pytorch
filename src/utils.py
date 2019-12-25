@@ -1,4 +1,4 @@
-import csv, time
+import csv, time, math
 from glob import glob
 from ops import LayerActivations
 import numpy as np
@@ -67,36 +67,118 @@ def fill_label(label, value):
     return label
 
 
-def visualize_conv_layer(epoch, model):
-    img = imread("C:/Users/CodeLab/PycharmProjects/hologram_pytorch/hologram_pytorch/kaist.png")
+def visualize_conv_layer(model):
+    img = imread("C:/Users/CodeLab/PycharmProjects/hologram_pytorch/hologram_pytorch/11.png")
     t = torch.from_numpy(np.reshape(img, (1, 1, 64, 64)))
+    t = t.cuda()
 
     conv_out = LayerActivations(model.c_layer1, 0)
-    o = model(t.cuda())
+    o = model(t)
     conv_out.remove()
     act = conv_out.features
     act = act.cpu().detach().numpy()
     for i in range(32):
-        save_path = "C:/Users/CodeLab/PycharmProjects/hologram_pytorch/hologram_pytorch/layers/layer1_"+str(i+1)+'_'+str(epoch)+'.png'
+        save_path = "C:/Users/CodeLab/PycharmProjects/hologram_pytorch/hologram_pytorch/layers/layer1_"+str(i+1)+'.png'
         imwrite(act[0][i], save_path)
 
     conv_out = LayerActivations(model.c_layer2, 0)
-    o = model(t.cuda())
+    o = model(t)
     conv_out.remove()
     act = conv_out.features
     act = act.cpu().detach().numpy()
     for i in range(16):
-        save_path = "C:/Users/CodeLab/PycharmProjects/hologram_pytorch/hologram_pytorch/layers/layer2_"+str(i+1)+'_'+str(epoch)+'.png'
+        save_path = "C:/Users/CodeLab/PycharmProjects/hologram_pytorch/hologram_pytorch/layers/layer2_"+str(i+1)+'.png'
         imwrite(act[0][i], save_path)
 
     conv_out = LayerActivations(model.c_layer3, 0)
-    o = model(t.cuda())
+    o = model(t)
     conv_out.remove()
     act = conv_out.features
     act = act.cpu().detach().numpy()
     for i in range(8):
-        save_path = "C:/Users/CodeLab/PycharmProjects/hologram_pytorch/hologram_pytorch/layers/layer3_"+str(i+1)+'_'+str(epoch)+'.png'
+        save_path = "C:/Users/CodeLab/PycharmProjects/hologram_pytorch/hologram_pytorch/layers/layer3_"+str(i+1)+'.png'
         imwrite(act[0][i], save_path)
+
+    conv_out = LayerActivations(model.c_layer4, 0)
+    o = model(t)
+    conv_out.remove()
+    act = conv_out.features
+    act = act.cpu().detach().numpy()
+    for i in range(4):
+        save_path = "C:/Users/CodeLab/PycharmProjects/hologram_pytorch/hologram_pytorch/layers/layer4_" + str(
+            i + 1) + '.png'
+        imwrite(act[0][i], save_path)
+
+    conv_out = LayerActivations(model.c_layer5, 0)
+    o = model(t)
+    conv_out.remove()
+    act = conv_out.features
+    act = act.cpu().detach().numpy()
+    for i in range(2):
+        save_path = "C:/Users/CodeLab/PycharmProjects/hologram_pytorch/hologram_pytorch/layers/layer5_" + str(
+            i + 1) + '.png'
+        imwrite(act[0][i], save_path)
+
+    conv_out = LayerActivations(model.d_layer5, 0)
+    o = model(t)
+    conv_out.remove()
+    act = conv_out.features
+    act = act.cpu().detach().numpy()
+    for i in range(2):
+        save_path = "C:/Users/CodeLab/PycharmProjects/hologram_pytorch/hologram_pytorch/layers/layer6_" + str(
+            i + 1) + '.png'
+        imwrite(act[0][i], save_path)
+
+    conv_out = LayerActivations(model.d_layer4, 0)
+    o = model(t)
+    conv_out.remove()
+    act = conv_out.features
+    act = act.cpu().detach().numpy()
+    for i in range(4):
+        save_path = "C:/Users/CodeLab/PycharmProjects/hologram_pytorch/hologram_pytorch/layers/layer7_" + str(
+            i + 1) + '.png'
+        imwrite(act[0][i], save_path)
+
+    conv_out = LayerActivations(model.d_layer3, 0)
+    o = model(t)
+    conv_out.remove()
+    act = conv_out.features
+    act = act.cpu().detach().numpy()
+    for i in range(8):
+        save_path = "C:/Users/CodeLab/PycharmProjects/hologram_pytorch/hologram_pytorch/layers/layer8_" + str(
+            i + 1) + '.png'
+        imwrite(act[0][i], save_path)
+
+    conv_out = LayerActivations(model.d_layer2, 0)
+    o = model(t)
+    conv_out.remove()
+    act = conv_out.features
+    act = act.cpu().detach().numpy()
+    for i in range(16):
+        save_path = "C:/Users/CodeLab/PycharmProjects/hologram_pytorch/hologram_pytorch/layers/layer9_" + str(
+            i + 1) + '.png'
+        imwrite(act[0][i], save_path)
+
+    conv_out = LayerActivations(model.d_layer1, 0)
+    o = model(t)
+    conv_out.remove()
+    act = conv_out.features
+    act = act.cpu().detach().numpy()
+    for i in range(1):
+        save_path = "C:/Users/CodeLab/PycharmProjects/hologram_pytorch/hologram_pytorch/layers/layer10_" + str(
+            i + 1) + '.png'
+        imwrite(act[0][i], save_path)
+
+
+def visualize_conv_filters(model):
+    model.state_dict().keys()
+    cnn_weights = model.state_dict()['c_layer1.0.c1.weight'].cpu()
+    cnn_weights = cnn_weights.cpu().detach().numpy()
+    for i in range(64):
+        save_path = "C:/Users/CodeLab/PycharmProjects/hologram_pytorch/hologram_pytorch/filters/layer1_" + str(
+            i + 1) + '.png'
+        imwrite(cnn_weights[i][0], save_path)
+
 
 
 """check arguments"""
@@ -111,7 +193,14 @@ def check_args(args):
 """gs algorithm"""
 
 
-def gs1time(img, cos, sin):
+def gs1time(img, phase):
+    reconimg = np.fft.fft2(np.exp(1j*phase*math.pi))
+    hologram = np.fft.ifft2(np.multiply(img, np.exp(1j * np.angle(reconimg))))
+    reconimg = abs(np.fft.fft2(np.exp(1j * np.angle(hologram))))
+    return reconimg[0, :, :]
+
+
+def gs1cossin(img, cos, sin):
     reconimg = np.fft.fft2(cos + 1j * sin)
     hologram = np.fft.ifft2(np.multiply(img, np.exp(1j * np.angle(reconimg))))
     reconimg = abs(np.fft.fft2(np.exp(1j * np.angle(hologram))))
@@ -249,8 +338,8 @@ def make_phase_projection(dataset_path):
 def print_loss(epoch, seconds, train_loss, valid_loss):
     h, m, s = get_hms(seconds)
     if epoch == 1:
-        print("epoch, time, train_loss_holo, valid_loss_holo, train_loss_image, valid_loss_image")
-    print(f"[{epoch:04}] {h:02}h{m:02}m{s:02}s, {train_loss[0]:.04}, {train_loss[1]:.04}, {valid_loss[0]:.04}, {valid_loss[1]:.04}")
+        print("epoch, time, train_loss, valid_loss")
+    print(f"[{epoch:04}] {h:02}h{m:02}m{s:02}s, {train_loss:.04}, {valid_loss:.04}")
 
 
 def print_start_time():
@@ -322,7 +411,7 @@ def normalize_img(img):
 
 
 def imread(img_path):
-    img = mpimg.imread(img_path)
+    img = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)/255
     return img.astype("float32")
 
 
@@ -338,7 +427,7 @@ def imshow(img):
 
 
 def imwrite(img, save_path):
-    img = normalize_img(img) * 255
+    img = img * 255
     cv2.imwrite(save_path, img)
 
 
@@ -359,3 +448,15 @@ def get_psnr(a, b):
         else:
             psnr = psnr - 20 * np.log10(np.sqrt(mse))
     return psnr / np.shape(a)[0]
+
+
+def imresize(img, w, h):
+    img = cv2.resize(img, (w, h), interpolation=cv2.INTER_AREA)
+    return img
+
+
+def imrotate90(img):
+    img = cv2.transpose(img)
+    img = cv2.flip(img, 1)
+    return img
+

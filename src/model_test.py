@@ -26,8 +26,16 @@ def main():
     G = HGN_sincos(args.list_of_block_numbers)
     G.load_state_dict(torch.load("../models/HGS_sincos_train_finished.pt"))
 
-    """ Train model """
+    # print(G)
+
+    """ test model """
     model_test(G)
+
+    """ visualize images  """
+    visualize_conv_layer(G)
+
+    """ visualize filters """
+    visualize_conv_filters(G)
 
 
 def model_test(G):
@@ -62,9 +70,8 @@ def model_test(G):
 
     save_reconimg_path = "../test_recon.png"
     imwrite(reconimg, save_reconimg_path)
-    cos = np.sqrt(1-np.square(sin))
 
-    reconimg = np.fft.fft2(np.cos(cos) + 1j * np.sin(sin))
+    reconimg = np.fft.fft2(cos + 1j * sin)
     hologram = np.fft.ifft2(np.multiply(img, np.exp(1j * np.angle(reconimg))))
     reconimg = abs(np.fft.fft2(np.exp(1j * np.angle(hologram))))
 

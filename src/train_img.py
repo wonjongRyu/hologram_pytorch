@@ -30,7 +30,7 @@ def train_img(args, G):
         """ Print image """
         if (epoch % args.print_cycle_of_images) == 0:
             test(args, G, test_loader, epoch)
-            # visualize_conv_layer(epoch, model)
+            visualize_conv_layer(G)
 
         """ Change the ratio of losses """
         # if epoch == args.change_cycle_of_loss_ratio:
@@ -42,7 +42,7 @@ def train_img(args, G):
 
         """ Save model """
         if (epoch % args.save_cycle_of_models) == 0:
-            torch.save(G.state_dict(), args.save_path_of_models + "/HGN_sincos_train_finished" + str(epoch) + ".pt")
+            torch.save(G.state_dict(), args.save_path_of_models + "/HGN_train_continued" + str(epoch) + ".pt")
 
     print('======================[ train finished ]======================')
 
@@ -62,7 +62,6 @@ def iteration(args, G, data_loader, phase):
 
         """ Initialize the loss_sum """
         loss_sum_image = 0.0
-        loss_sum_sincos = 0.0
 
         """ Start batch iteration """
         for batch_idx, image in enumerate(data_loader):
@@ -72,24 +71,22 @@ def iteration(args, G, data_loader, phase):
                 image = image.cuda()
 
             """ Run model """
-            reconimg, cos, sin = G(image)
+            _, reconimg = G(image)
 
             """ Calculate batch loss """
             loss_image = criterion(reconimg, image)
-            loss_sincos = sin_cos_loss(sin, cos)
-            loss = loss_image + 0.05*loss_sincos
+            # loss_image = minmaxLoss_rowcolumn(reconimg)
 
             """ Back propagation """
             if phase == "train":
                 optimizer.zero_grad()
-                loss.backward()
+                loss_image.backward()
                 optimizer.step()
 
             """ Add to get epoch loss """
             loss_sum_image += loss_image.item()  # 여기 item() 없으면 GPU 박살
-            loss_sum_sincos += loss_sincos.item()  # 여기 item() 없으면 GPU 박살
 
             """ Clear memory """
             torch.cuda.empty_cache()
 
-        return loss_sum_image / len(data_loader), loss_sum_sincos / len(data_loader)
+        return loss_sum_image / len(data_loader)

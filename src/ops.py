@@ -3,6 +3,7 @@ import torch.nn as nn
 import torch
 
 
+
 class netD(nn.Module):
     def __init__(self):
         super(netD, self).__init__()
@@ -150,11 +151,38 @@ def sin_cos_loss(cos, sin):
     loss = loss.sum(0).sum(0).sum(0).sum(0)
     return loss/(64*64*64)
 
+
+def minmaxLoss_onepoint(img):
+    max1, _ = img.max(2)
+    max2, _ = max1.max(2)
+
+    min1, _ = img.min(2)
+    min2, _ = min1.min(2)
+
+    loss = max2-min2
+    sum = loss.sum(0)
+
+    return sum
+
+
+def minmaxLoss_rowcolumn(img):
+
+    for i in range(img.size()[0]):
+        plane = img[i, :, :, :]
+        meanval = plane.mean()
+        plane = plane - meanval
+        img[i, :, :, :] = abs(plane)
+
+    sum = img.sum()
+
+    return sum
+
+
 def do(i):
     return nn.Dropout2d(i)
 
 
-def n(tensor):
+def n1(tensor):
     if torch.sub(torch.max(tensor), torch.min(tensor)) == 0:
         tensor = tensor / tensor
     else:
@@ -168,4 +196,12 @@ def n(tensor):
                 torch.min(tensor)
             )
         )
+    return tensor
+
+
+def n2(tensor):
+    if torch.sub(torch.max(tensor), torch.min(tensor)) == 0:
+        tensor = tensor / tensor
+    else:
+        tensor = torch.div(tensor, torch.max(tensor))
     return tensor
