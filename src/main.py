@@ -12,7 +12,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Hologram Generation Net")
 
     """ Dataset Path """
-    parser.add_argument("--path_of_dataset", type=str, default="../dataset/object16000_64")
+    parser.add_argument("--path_of_dataset", type=str, default="../dataset/object16000_128")
 
     """ Training Condition """
     parser.add_argument("--use_preTrained_model", type=int, default=False)
@@ -32,13 +32,14 @@ def parse_args():
 
     """ Print Cycles """
     parser.add_argument("--print_cycle_of_loss", type=int, default=10)
-    parser.add_argument("--print_cycle_of_images", type=int, default=50)
-    parser.add_argument("--save_cycle_of_models", type=int, default=500)
+    parser.add_argument("--print_cycle_of_images", type=int, default=20)
+    parser.add_argument("--save_cycle_of_models", type=int, default=100)
 
     """ Save Paths """
     parser.add_argument("--save_path_of_outputs", type=str, default="../outputs")
     parser.add_argument("--save_path_of_images", type=str, default="../outputs/images")
     parser.add_argument("--save_path_of_models", type=str, default="../outputs/models")
+    parser.add_argument("--save_path_of_layers", type=str, default="../outputs/layers")
     parser.add_argument("--save_path_of_loss", type=str, default="../outputs/loss")
 
     return check_args(parser.parse_args())
@@ -63,6 +64,7 @@ def main():
     """ Define Network """
     # G = DenseNetBC_100_12()
     G = HGN(args.list_of_block_numbers)
+    # print(G)
     # G.load_state_dict(torch.load("../models/GANfc.pt"))
     # D = netD()
 
@@ -71,7 +73,7 @@ def main():
         # D.cuda()
 
     """ check parameter """
-    summary(G, (1, 64, 64))
+    summary(G, (1, 128, 128))
 
     """ Train model """
     train_img(args, G)

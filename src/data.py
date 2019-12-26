@@ -12,7 +12,7 @@ class myDataset1(Dataset):
 
     def __getitem__(self, idx):
         images = np.asarray(imread(self.images[idx]))
-        images = np.reshape(images, (64, 64, 1))
+        images = np.reshape(images, (128, 128, 1))
         images = np.swapaxes(images, 0, 2)
         images = np.swapaxes(images, 1, 2)
 

@@ -1,0 +1,18 @@
+clear; close all; 
+
+sz = 64;
+img = rgb2gray(im2double(imread('lena1960.jpeg')));
+img = imresize(img, [sz,sz]);
+[hologram, reconimg] = GSalgorithm(img, 100);
+canvas = zeros(sz); x=1; y=1; dx=64; dy=64;
+canvas(x:x+dx-1, y:y+dy-1) = hologram(x:x+dx-1, y:y+dy-1);
+
+reconimg = (abs(fft2(canvas)));
+sum1 = sum(sum(reconimg));
+max1 = max(max(reconimg));
+
+reconimg = (abs(fft2(exp(1i*angle(canvas)))));
+sum2 sum(sum(reconimg))
+max(max(reconimg))
+
+% imshow(mat2gray(reconimg));

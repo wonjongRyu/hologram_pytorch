@@ -14,24 +14,25 @@ def make_output_folders(args):
     make_output_folder(args)
     make_image_folder(args)
     make_model_folder(args)
+    make_layer_folder(args)
     make_csv_file(args)
-
 
 def make_output_folder(args):
     tl, _ = get_time_list()
     args.save_path_of_outputs = '../outputs/' + tl[0] + '_' + tl[1] + '_' + tl[2] + '_' + tl[3]
     check_and_make_folder(args.save_path_of_outputs)
 
-
 def make_image_folder(args):
     args.save_path_of_images = args.save_path_of_outputs + '/images'
     check_and_make_folder(args.save_path_of_images)
-
 
 def make_model_folder(args):
     args.save_path_of_models = args.save_path_of_outputs + '/models'
     check_and_make_folder(args.save_path_of_models)
 
+def make_layer_folder(args):
+    args.save_path_of_layers = args.save_path_of_outputs + '/layers'
+    check_and_make_folder(args.save_path_of_layers)
 
 def make_csv_file(args):
     args.save_path_of_loss = args.save_path_of_outputs + '/loss.csv'
@@ -67,107 +68,41 @@ def fill_label(label, value):
     return label
 
 
-def visualize_conv_layer(model):
-    img = imread("C:/Users/CodeLab/PycharmProjects/hologram_pytorch/hologram_pytorch/11.png")
-    t = torch.from_numpy(np.reshape(img, (1, 1, 64, 64)))
-    t = t.cuda()
+def visualize_conv_layer(args, model):
+    img_path = "C:/Users/CodeLab/PycharmProjects/hologram_pytorch/hologram_pytorch/"
+    img_list = ["lenna128.png", "flower128.png", "kaist128.png"]
+    layer_save_path = args.save_path_of_layers
 
-    conv_out = LayerActivations(model.c_layer1, 0)
-    o = model(t)
-    conv_out.remove()
-    act = conv_out.features
-    act = act.cpu().detach().numpy()
-    for i in range(32):
-        save_path = "C:/Users/CodeLab/PycharmProjects/hologram_pytorch/hologram_pytorch/layers/layer1_"+str(i+1)+'.png'
-        imwrite(act[0][i], save_path)
+    for k in range(3):
 
-    conv_out = LayerActivations(model.c_layer2, 0)
-    o = model(t)
-    conv_out.remove()
-    act = conv_out.features
-    act = act.cpu().detach().numpy()
-    for i in range(16):
-        save_path = "C:/Users/CodeLab/PycharmProjects/hologram_pytorch/hologram_pytorch/layers/layer2_"+str(i+1)+'.png'
-        imwrite(act[0][i], save_path)
+        img = imread(img_path + img_list[k])
+        t = torch.from_numpy(np.reshape(img, (1, 1, 128, 128)))
+        t = t.cuda()
 
-    conv_out = LayerActivations(model.c_layer3, 0)
-    o = model(t)
-    conv_out.remove()
-    act = conv_out.features
-    act = act.cpu().detach().numpy()
-    for i in range(8):
-        save_path = "C:/Users/CodeLab/PycharmProjects/hologram_pytorch/hologram_pytorch/layers/layer3_"+str(i+1)+'.png'
-        imwrite(act[0][i], save_path)
+        c_layer = [model.c_layer1, model.c_layer2, model.c_layer3, model.c_layer4, model.c_layer5]
+        d_layer = [model.d_layer1, model.d_layer2, model.d_layer3, model.d_layer4, model.d_layer5]
 
-    conv_out = LayerActivations(model.c_layer4, 0)
-    o = model(t)
-    conv_out.remove()
-    act = conv_out.features
-    act = act.cpu().detach().numpy()
-    for i in range(4):
-        save_path = "C:/Users/CodeLab/PycharmProjects/hologram_pytorch/hologram_pytorch/layers/layer4_" + str(
-            i + 1) + '.png'
-        imwrite(act[0][i], save_path)
+        for i in range(5):
+            conv_out = LayerActivations(c_layer[i], 1)
+            o = model(t)
+            conv_out.remove()
+            act = conv_out.features
+            act = act.cpu().detach().numpy()
+            layers = act[0]
+            for j in range(len(layers)):
+                save_path = layer_save_path + '/image' + str(k+1) + '_layer' + str(i+1) + '_' + str(j+1) + '.png'
+                imwrite(layers[j], save_path)
 
-    conv_out = LayerActivations(model.c_layer5, 0)
-    o = model(t)
-    conv_out.remove()
-    act = conv_out.features
-    act = act.cpu().detach().numpy()
-    for i in range(2):
-        save_path = "C:/Users/CodeLab/PycharmProjects/hologram_pytorch/hologram_pytorch/layers/layer5_" + str(
-            i + 1) + '.png'
-        imwrite(act[0][i], save_path)
-
-    conv_out = LayerActivations(model.d_layer5, 0)
-    o = model(t)
-    conv_out.remove()
-    act = conv_out.features
-    act = act.cpu().detach().numpy()
-    for i in range(2):
-        save_path = "C:/Users/CodeLab/PycharmProjects/hologram_pytorch/hologram_pytorch/layers/layer6_" + str(
-            i + 1) + '.png'
-        imwrite(act[0][i], save_path)
-
-    conv_out = LayerActivations(model.d_layer4, 0)
-    o = model(t)
-    conv_out.remove()
-    act = conv_out.features
-    act = act.cpu().detach().numpy()
-    for i in range(4):
-        save_path = "C:/Users/CodeLab/PycharmProjects/hologram_pytorch/hologram_pytorch/layers/layer7_" + str(
-            i + 1) + '.png'
-        imwrite(act[0][i], save_path)
-
-    conv_out = LayerActivations(model.d_layer3, 0)
-    o = model(t)
-    conv_out.remove()
-    act = conv_out.features
-    act = act.cpu().detach().numpy()
-    for i in range(8):
-        save_path = "C:/Users/CodeLab/PycharmProjects/hologram_pytorch/hologram_pytorch/layers/layer8_" + str(
-            i + 1) + '.png'
-        imwrite(act[0][i], save_path)
-
-    conv_out = LayerActivations(model.d_layer2, 0)
-    o = model(t)
-    conv_out.remove()
-    act = conv_out.features
-    act = act.cpu().detach().numpy()
-    for i in range(16):
-        save_path = "C:/Users/CodeLab/PycharmProjects/hologram_pytorch/hologram_pytorch/layers/layer9_" + str(
-            i + 1) + '.png'
-        imwrite(act[0][i], save_path)
-
-    conv_out = LayerActivations(model.d_layer1, 0)
-    o = model(t)
-    conv_out.remove()
-    act = conv_out.features
-    act = act.cpu().detach().numpy()
-    for i in range(1):
-        save_path = "C:/Users/CodeLab/PycharmProjects/hologram_pytorch/hologram_pytorch/layers/layer10_" + str(
-            i + 1) + '.png'
-        imwrite(act[0][i], save_path)
+        for i in range(5):
+            conv_out = LayerActivations(d_layer[4-i], 1)
+            o = model(t)
+            conv_out.remove()
+            act = conv_out.features
+            act = act.cpu().detach().numpy()
+            layers = act[0]
+            for j in range(len(layers)):
+                save_path = layer_save_path + '/image' + str(k+1) + '_layer' + str(i+6) + '_' + str(j+1) + '.png'
+                imwrite(layers[j], save_path)
 
 
 def visualize_conv_filters(model):

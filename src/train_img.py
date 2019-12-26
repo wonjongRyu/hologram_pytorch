@@ -25,12 +25,12 @@ def train_img(args, G):
         """ Print loss """
         if (epoch % args.print_cycle_of_loss) == 0:
             print_loss(epoch, time.time()-since, train_loss, valid_loss)
-            # record_on_csv(args, epoch, time.time()-since, train_loss, valid_loss)
+            record_on_csv(args, epoch, time.time()-since, train_loss, valid_loss)
 
         """ Print image """
         if (epoch % args.print_cycle_of_images) == 0:
             test(args, G, test_loader, epoch)
-            visualize_conv_layer(G)
+            visualize_conv_layer(args, G)
 
         """ Change the ratio of losses """
         # if epoch == args.change_cycle_of_loss_ratio:
@@ -75,7 +75,6 @@ def iteration(args, G, data_loader, phase):
 
             """ Calculate batch loss """
             loss_image = criterion(reconimg, image)
-            # loss_image = minmaxLoss_rowcolumn(reconimg)
 
             """ Back propagation """
             if phase == "train":
