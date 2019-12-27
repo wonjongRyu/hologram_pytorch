@@ -64,17 +64,20 @@ def iteration(args, G, data_loader, phase):
         loss_sum_image = 0.0
 
         """ Start batch iteration """
-        for batch_idx, image in enumerate(data_loader):
+        for batch_idx, (image, norm) in enumerate(data_loader):
 
             """ Transfer data to GPU """
             if args.is_cuda_available:
-                image = image.cuda()
+                image, norm = image.cuda(), norm.cuda()
 
             """ Run model """
             _, reconimg = G(image)
 
             """ Calculate batch loss """
-            loss_image = criterion(reconimg, image)
+            norm = 4096/norm
+            norm = torch.reshape(norm, [len(norm), 1, 1, 1])
+            normalized_img = torch.mul(norm, image)
+            loss_image = criterion(reconimg, normalized_img)
 
             """ Back propagation """
             if phase == "train":

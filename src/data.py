@@ -6,17 +6,26 @@ from torch.utils.data import Dataset, DataLoader
 class myDataset1(Dataset):
     def __init__(self, root_dir):
         self.images = glob(join(root_dir, "*.png"))
+        self.csv_path = root_dir + '.csv'
+
+        with open(self.csv_path, 'r') as f:
+            reader = csv.reader(f)
+            norm_arr = list(reader)
+        norm_arr = np.squeeze(norm_arr)
+        norm_arr = list(map(float, norm_arr))
+        self.norm_arr = np.asarray(norm_arr)
 
     def __len__(self):
         return len(self.images)
 
     def __getitem__(self, idx):
         images = np.asarray(imread(self.images[idx]))
-        images = np.reshape(images, (128, 128, 1))
+        images = np.reshape(images, (64, 64, 1))
         images = np.swapaxes(images, 0, 2)
         images = np.swapaxes(images, 1, 2)
+        norm = self.norm_arr[idx]
 
-        return images
+        return images, norm
 
 
 class myDataset2(Dataset):
@@ -72,6 +81,22 @@ class myDataset2Input(Dataset):
 
 
 def data_loader1(args):
+    """ Data Loader"""
+
+    """ Load image data """
+    train_images = myDataset1(join(args.path_of_dataset, "train"))
+    valid_images = myDataset1(join(args.path_of_dataset, "valid"))
+    test_images = myDataset1(join(args.path_of_dataset, "test"))
+
+    """ Wrap them with DataLoader structure """
+    train_loader = DataLoader(train_images, batch_size=args.batch_size, shuffle=True)
+    valid_loader = DataLoader(valid_images, batch_size=args.batch_size, shuffle=True)
+    test_loader = DataLoader(test_images, batch_size=args.batch_size, shuffle=False)  # ***FALSE***
+
+    return train_loader, valid_loader, test_loader
+
+
+def data_loader11(args):
     """ Data Loader"""
 
     """ Load image data """

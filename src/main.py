@@ -12,7 +12,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Hologram Generation Net")
 
     """ Dataset Path """
-    parser.add_argument("--path_of_dataset", type=str, default="../dataset/object16000_128")
+    parser.add_argument("--path_of_dataset", type=str, default="../dataset/object4000_64")
 
     """ Training Condition """
     parser.add_argument("--use_preTrained_model", type=int, default=False)
@@ -73,7 +73,7 @@ def main():
         # D.cuda()
 
     """ check parameter """
-    summary(G, (1, 128, 128))
+    summary(G, (1, 64, 64))
 
     """ Train model """
     train_img(args, G)

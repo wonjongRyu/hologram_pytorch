@@ -70,13 +70,14 @@ def fill_label(label, value):
 
 def visualize_conv_layer(args, model):
     img_path = "C:/Users/CodeLab/PycharmProjects/hologram_pytorch/hologram_pytorch/"
-    img_list = ["lenna128.png", "flower128.png", "kaist128.png"]
+    img_list = ["lenna.png", "flower.png", "kaist.png"]
     layer_save_path = args.save_path_of_layers
 
     for k in range(3):
 
         img = imread(img_path + img_list[k])
-        t = torch.from_numpy(np.reshape(img, (1, 1, 128, 128)))
+        sz = np.shape(img)[0]
+        t = torch.from_numpy(np.reshape(img, (1, 1, sz, sz)))
         t = t.cuda()
 
         c_layer = [model.c_layer1, model.c_layer2, model.c_layer3, model.c_layer4, model.c_layer5]
@@ -153,6 +154,7 @@ def gs_algorithm(img, iteration_num):
     """rgb2gray"""
 
     """Add Random Phase"""
+    #img = add_random_phase(img)
     hologram = np.fft.ifft2(img)
 
     """Iteration"""
@@ -161,8 +163,7 @@ def gs_algorithm(img, iteration_num):
         hologram = np.fft.ifft2(np.multiply(img, np.exp(1j * np.angle(reconimg))))
 
     """Normalization"""
-    hologram = normalize_img(np.angle(hologram))
-    return hologram
+    return hologram, reconimg
 
 
 def get_gs_10and100(img):
@@ -338,7 +339,7 @@ def record_on_csv(args, epoch, seconds, train_loss, valid_loss):
 """ image """
 
 
-def normalize_img(img):
+def imnorm(img):
     if (np.max(img) - np.min(img)) == 0:
         return img
     else:

@@ -178,8 +178,12 @@ def minmaxLoss_rowcolumn(img):
     return sum
 
 
-def do(i):
-    return nn.Dropout2d(i)
+def d1():
+    return nn.Dropout()
+
+
+def d2():
+    return nn.Dropout2d()
 
 
 def n1(tensor):
