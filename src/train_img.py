@@ -4,33 +4,31 @@ from utils import *
 from ops import *
 import time
 from test import test
-from data import data_loader1
+from data import data_loader
 
 
 def train_img(args, G):
     """ train function """
 
-    print_start_time()
-    make_output_folders(args)
     since = time.time()
 
     """ Start iteration """
     for epoch in range(1, args.epoch_max+1):
 
         """ run 1 epoch and get loss """
-        train_loader, valid_loader, test_loader = data_loader1(args)
+        train_loader, valid_loader, test_loader = data_loader(args)
         train_loss = iteration(args, G, train_loader, phase="train")
         valid_loss = iteration(args, G, valid_loader, phase="valid")
 
         """ Print loss """
-        if (epoch % args.print_cycle_of_loss) == 0:
+        if (epoch % args.save_cycle_of_loss) == 0:
             print_loss(epoch, time.time()-since, train_loss, valid_loss)
             record_on_csv(args, epoch, time.time()-since, train_loss, valid_loss)
 
         """ Print image """
-        if (epoch % args.print_cycle_of_images) == 0:
+        if (epoch % args.save_cycle_of_images) == 0:
+            # visualize_conv_layer(args, G)
             test(args, G, test_loader, epoch)
-            visualize_conv_layer(args, G)
 
         """ Change the ratio of losses """
         # if epoch == args.change_cycle_of_loss_ratio:
@@ -62,7 +60,6 @@ def iteration(args, G, data_loader, phase):
 
         """ Initialize the loss_sum """
         loss_sum_image = 0.0
-
         """ Start batch iteration """
         for batch_idx, (image, norm) in enumerate(data_loader):
 
@@ -76,8 +73,8 @@ def iteration(args, G, data_loader, phase):
             """ Calculate batch loss """
             norm = 4096/norm
             norm = torch.reshape(norm, [len(norm), 1, 1, 1])
-            normalized_img = torch.mul(norm, image)
-            loss_image = criterion(reconimg, normalized_img)
+            normalized_reconimg = torch.div(reconimg, norm)
+            loss_image = criterion(image, normalized_reconimg)
 
             """ Back propagation """
             if phase == "train":
@@ -92,3 +89,4 @@ def iteration(args, G, data_loader, phase):
             torch.cuda.empty_cache()
 
         return loss_sum_image / len(data_loader)
+

@@ -2,50 +2,118 @@ import csv, time, math
 from glob import glob
 from ops import LayerActivations
 import numpy as np
-import torch, cv2, os
+import cv2, os
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
+import torch
+import torch.nn as nn
+from collections import OrderedDict
 
 
 """ Make output directories """
 
 
-def make_output_folders(args):
-    make_output_folder(args)
-    make_image_folder(args)
-    make_model_folder(args)
-    make_layer_folder(args)
-    make_csv_file(args)
+def get_size(img):
+    return np.shape(img)[0]
 
-def make_output_folder(args):
-    tl, _ = get_time_list()
-    args.save_path_of_outputs = '../outputs/' + tl[0] + '_' + tl[1] + '_' + tl[2] + '_' + tl[3]
+
+def get_filtered_img(img, model, layer):
+    conv_out = LayerActivations(layer, 1)
+    o = model(img)
+    conv_out.remove()
+    act = conv_out.features
+    act = act.cpu().detach().numpy()
+    filtered_img = act[0]
+    return filtered_img
+
+
+def combine(*args):
+    combined_str = []
+    for arg in args:
+        combined_str.append(str(arg))
+    combined_str = "".join(combined_str)
+    return combined_str
+
+
+def save_start_time(args):
+    tl = get_time_list()
+    args.since = tl[0] + tl[1] + tl[2] + "_" + tl[3] + tl[4]
+    print("")
+    print("=" * 25 + "[   " + args.since + "   ]" + "=" * 25)
+    print("=" * 25 + "[   TRAIN_START   ]" + "=" * 25)
+    print("")
+
+
+def write_csv_row(csv_path, word_list):
+    f = open(csv_path, "a", encoding="utf-8", newline="")
+    wr = csv.writer(f)
+    wr.writerow(word_list)
+    f.close()
+
+
+def make_csvfile_and_folders(args):
+    args.save_path_of_outputs = os.path.join(args.save_path_of_outputs, args.since)
     check_and_make_folder(args.save_path_of_outputs)
+    make_csvfile(args)
+    make_folders(args)
 
-def make_image_folder(args):
-    args.save_path_of_images = args.save_path_of_outputs + '/images'
+
+def make_folders(args):
+    make_images_folder(args)
+    make_models_folder(args)
+    make_layers_folder(args)
+    make_tensor_folder(args)
+
+
+def make_csvfile(args):
+    make_loss_file(args)
+    make_arch_file(args)
+    make_args_file(args)
+
+
+def make_images_folder(args):
+    args.save_path_of_images = args.save_path_of_outputs + "/images"
     check_and_make_folder(args.save_path_of_images)
 
-def make_model_folder(args):
-    args.save_path_of_models = args.save_path_of_outputs + '/models'
+
+def make_models_folder(args):
+    args.save_path_of_models = args.save_path_of_outputs + "/models"
     check_and_make_folder(args.save_path_of_models)
 
-def make_layer_folder(args):
-    args.save_path_of_layers = args.save_path_of_outputs + '/layers'
+
+def make_layers_folder(args):
+    args.save_path_of_layers = args.save_path_of_outputs + "/layers"
     check_and_make_folder(args.save_path_of_layers)
 
-def make_csv_file(args):
-    args.save_path_of_loss = args.save_path_of_outputs + '/loss.csv'
-    f = open(args.save_path_of_loss, "a", encoding="utf-8", newline="")
-    wr = csv.writer(f)
-    wr.writerow(["epoch", "time", "train_loss_holo", "train_loss_image", "valid_loss_holo", "valid_loss_image"])
-    f.close()
+
+def make_tensor_folder(args):
+    args.save_path_of_tensor = args.save_path_of_outputs + "/tensor"
+    check_and_make_folder(args.save_path_of_tensor)
+
+
+def make_loss_file(args):
+    args.save_path_of_loss = args.save_path_of_outputs + "/loss_" + args.since + ".csv"
+    write_csv_row(args.save_path_of_loss, ["epoch", "time", "train_loss", "valid_loss"])
+
+
+def make_arch_file(args):
+    args.save_path_of_arch = args.save_path_of_outputs + "/arch_" + args.since + ".csv"
+    write_csv_row(args.save_path_of_arch, [""])
+
+
+def make_args_file(args):
+    args.save_path_of_args = args.save_path_of_outputs + "/args_" + args.since + ".csv"
+
+    args_dict = vars(args)
+    args_keys = list(args_dict.keys())
+    args_vals = list(args_dict.values())
+    for i in range(len(args_keys)):
+        write_csv_row(args.save_path_of_args, [args_keys[i], args_vals[i]])
 
 
 def check_and_make_folder(folder):
     if not os.path.exists(folder):
         os.makedirs(folder)
-
 
 
 """ etc """
@@ -68,204 +136,70 @@ def fill_label(label, value):
     return label
 
 
+def save_tensor(args, tensors):
+    save_root = args.save_path_of_tensor
+    for i in range(len(tensors)):
+        file_path = combine('tensor', i+1, '.csv')
+        save_path = os.path.join(save_root, file_path)
+        np.savetxt(save_path, tensors[i, :, :], delimiter=",")
+
+
 def visualize_conv_layer(args, model):
     img_path = "C:/Users/CodeLab/PycharmProjects/hologram_pytorch/hologram_pytorch/"
     img_list = ["lenna.png", "flower.png", "kaist.png"]
-    layer_save_path = args.save_path_of_layers
+    save_root = args.save_path_of_layers
 
     for k in range(3):
 
         img = imread(img_path + img_list[k])
-        sz = np.shape(img)[0]
-        t = torch.from_numpy(np.reshape(img, (1, 1, sz, sz)))
-        t = t.cuda()
+        sz = get_size(img)
+        img = torch.from_numpy(np.reshape(img, (1, 1, sz, sz)))
+        img = img.cuda()
 
-        c_layer = [model.c_layer1, model.c_layer2, model.c_layer3, model.c_layer4, model.c_layer5]
-        d_layer = [model.d_layer1, model.d_layer2, model.d_layer3, model.d_layer4, model.d_layer5]
+        c_layer = [
+            model.c_layer1,
+            model.c_layer2,
+            model.c_layer3,
+            model.c_layer4,
+            model.c_layer5,
+        ]
+        d_layer = [
+            model.d_layer1,
+            model.d_layer2,
+            model.d_layer3,
+            model.d_layer4,
+            model.d_layer5,
+        ]
 
         for i in range(5):
-            conv_out = LayerActivations(c_layer[i], 1)
-            o = model(t)
-            conv_out.remove()
-            act = conv_out.features
-            act = act.cpu().detach().numpy()
-            layers = act[0]
-            for j in range(len(layers)):
-                save_path = layer_save_path + '/image' + str(k+1) + '_layer' + str(i+1) + '_' + str(j+1) + '.png'
-                imwrite(layers[j], save_path)
+            layer = c_layer[i]
+            images = get_filtered_img(img, model, layer)
+            for j in range(len(images)):
+                file_path = combine("image", k + 1, "_layer", i + 1, "_", j + 1, ".png")
+                save_path = os.path.join(save_root, file_path)
+                imwrite(images[j], save_path)
 
         for i in range(5):
-            conv_out = LayerActivations(d_layer[4-i], 1)
-            o = model(t)
-            conv_out.remove()
-            act = conv_out.features
-            act = act.cpu().detach().numpy()
-            layers = act[0]
-            for j in range(len(layers)):
-                save_path = layer_save_path + '/image' + str(k+1) + '_layer' + str(i+6) + '_' + str(j+1) + '.png'
-                imwrite(layers[j], save_path)
+            layer = d_layer[4-i]
+            images = get_filtered_img(img, model, layer)
+            for j in range(len(images)):
+                file_path = combine("image", k + 1, "_layer", i + 6, "_", j + 1, ".png")
+                save_path = os.path.join(save_root, file_path)
+                imwrite(images[j], save_path)
 
 
 def visualize_conv_filters(model):
     model.state_dict().keys()
-    cnn_weights = model.state_dict()['c_layer1.0.c1.weight'].cpu()
+    cnn_weights = model.state_dict()["c_layer1.0.c1.weight"].cpu()
     cnn_weights = cnn_weights.cpu().detach().numpy()
     for i in range(64):
-        save_path = "C:/Users/CodeLab/PycharmProjects/hologram_pytorch/hologram_pytorch/filters/layer1_" + str(
-            i + 1) + '.png'
+        save_path = (
+            "C:/Users/CodeLab/PycharmProjects/hologram_pytorch/hologram_pytorch/filters/layer1_"
+            + str(i + 1)
+            + ".png"
+        )
         imwrite(cnn_weights[i][0], save_path)
 
-
-
-"""check arguments"""
-
-
-def check_args(args):
-    # --checkpoint_dir
-
-    return args
-
-
-"""gs algorithm"""
-
-
-def gs1time(img, phase):
-    reconimg = np.fft.fft2(np.exp(1j*phase*math.pi))
-    hologram = np.fft.ifft2(np.multiply(img, np.exp(1j * np.angle(reconimg))))
-    reconimg = abs(np.fft.fft2(np.exp(1j * np.angle(hologram))))
-    return reconimg[0, :, :]
-
-
-def gs1cossin(img, cos, sin):
-    reconimg = np.fft.fft2(cos + 1j * sin)
-    hologram = np.fft.ifft2(np.multiply(img, np.exp(1j * np.angle(reconimg))))
-    reconimg = abs(np.fft.fft2(np.exp(1j * np.angle(hologram))))
-    return reconimg[0, :, :]
-
-
-def add_random_phase(img):
-    size = img.shape[0]
-    random_phase = np.exp(1j * 2 * np.pi * np.random.rand(size, size))  # random phase
-    img_with_random_phase = np.multiply(img, random_phase)
-    return img_with_random_phase
-
-
-def gs_algorithm(img, iteration_num):
-    """rgb2gray"""
-
-    """Add Random Phase"""
-    #img = add_random_phase(img)
-    hologram = np.fft.ifft2(img)
-
-    """Iteration"""
-    for i in range(iteration_num):
-        reconimg = np.fft.fft2(np.exp(1j * np.angle(hologram)))
-        hologram = np.fft.ifft2(np.multiply(img, np.exp(1j * np.angle(reconimg))))
-
-    """Normalization"""
-    return hologram, reconimg
-
-
-def get_gs_10and100(img):
-    """rgb2gray"""
-
-    """Add Random Phase"""
-    img_with_random_phase = add_random_phase(img)
-    hologram = np.fft.ifft2(img_with_random_phase)
-
-    holo1 = normalize_img(np.angle(hologram))
-
-    """Iteration"""
-
-    for i in range(100):
-        reconimg = np.fft.fft2(np.exp(1j * np.angle(hologram)))
-        hologram = np.fft.ifft2(np.multiply(img, np.exp(1j * np.angle(reconimg))))
-
-    """Normalization"""
-    holo100 = normalize_img(np.angle(hologram))
-
-    return holo1, holo100
-
-
-def make_holograms(dataset_path):
-    train_image = os.path.join(dataset_path, "train")
-    valid_image = os.path.join(dataset_path, "valid")
-    test_image = os.path.join(dataset_path, "test")
-
-    len_train = len(glob(os.path.join(train_image, "images/*.*")))
-    len_valid = len(glob(os.path.join(valid_image, "images/*.*")))
-    len_test = len(glob(os.path.join(test_image, "images/*.*")))
-
-    print("Start Train Folder")
-    for i in range(len_train):
-        img = imread(os.path.join(train_image, "images/" + str(i+1)+".png"))
-        hologram = gs_algorithm(img, 100)
-        imwrite(hologram, os.path.join(train_image, "holograms/"+str(i+1)+".png"))
-
-    print("Start Valid Folder")
-    for i in range(len_valid):
-        img = imread(os.path.join(valid_image, "images/" + str(i + 1) + ".png"))
-        hologram = gs_algorithm(img, 100)
-        imwrite(hologram, os.path.join(valid_image, "holograms/" + str(i + 1) + ".png"))
-
-    print("Start Test Folder")
-    for i in range(len_test):
-        img = imread(os.path.join(test_image, "images/" + str(i + 1) + ".png"))
-        hologram = gs_algorithm(img, 100)
-        imwrite(hologram, os.path.join(test_image, "holograms/" + str(i + 1) + ".png"))
-
-
-def make_fft_phase(dataset_path):
-    train_image = os.path.join(dataset_path, "train")
-    valid_image = os.path.join(dataset_path, "valid")
-    test_image = os.path.join(dataset_path, "test")
-
-    len_train = len(glob(os.path.join(train_image, "images/*.*")))
-    len_valid = len(glob(os.path.join(valid_image, "images/*.*")))
-    len_test = len(glob(os.path.join(test_image, "images/*.*")))
-
-    for i in range(len_train):
-        img = imread(os.path.join(train_image, "images/" + str(i+1)+".png"))
-        hologram = gs_algorithm(img, 100)
-        imwrite(hologram, os.path.join(train_image, "holograms/"+str(i+1)+".png"))
-
-    for i in range(len_valid):
-        img = imread(os.path.join(valid_image, "images/" + str(i + 1) + ".png"))
-        hologram = gs_algorithm(img, 100)
-        imwrite(hologram, os.path.join(valid_image, "holograms/" + str(i + 1) + ".png"))
-
-    for i in range(len_test):
-        img = imread(os.path.join(test_image, "images/" + str(i + 1) + ".png"))
-        hologram = gs_algorithm(img, 100)
-        imwrite(hologram, os.path.join(test_image, "holograms/" + str(i + 1) + ".png"))
-
-
-def make_phase_projection(dataset_path):
-    train_image = os.path.join(dataset_path, "train")
-    valid_image = os.path.join(dataset_path, "valid")
-    test_image = os.path.join(dataset_path, "test")
-
-    len_train = len(glob(os.path.join(train_image, "images/*.*")))
-    len_valid = len(glob(os.path.join(valid_image, "images/*.*")))
-    len_test = len(glob(os.path.join(test_image, "images/*.*")))
-
-    for i in range(len_train):
-        img = imread(os.path.join(train_image, "images/" + str(i+1)+".png"))
-        holo1, holo100 = get_gs_10and100(img)
-        imwrite(holo1, os.path.join(train_image, "gs1/"+str(i+1)+".png"))
-        imwrite(holo100, os.path.join(train_image, "gs100/"+str(i+1)+".png"))
-
-    for i in range(len_valid):
-        img = imread(os.path.join(valid_image, "images/" + str(i + 1) + ".png"))
-        holo1, holo100 = get_gs_10and100(img)
-        imwrite(holo1, os.path.join(valid_image, "gs1/"+str(i+1)+".png"))
-        imwrite(holo100, os.path.join(valid_image, "gs100/" + str(i + 1) + ".png"))
-
-    for i in range(len_test):
-        img = imread(os.path.join(test_image, "images/" + str(i + 1) + ".png"))
-        holo1, holo100 = get_gs_10and100(img)
-        imwrite(holo1, os.path.join(test_image, "gs1/"+str(i+1)+".png"))
-        imwrite(holo100, os.path.join(test_image, "gs100/" + str(i + 1) + ".png"))
 
 
 """ print """
@@ -274,16 +208,8 @@ def make_phase_projection(dataset_path):
 def print_loss(epoch, seconds, train_loss, valid_loss):
     h, m, s = get_hms(seconds)
     if epoch == 1:
-        print("epoch, time, train_loss, valid_loss")
-    print(f"[{epoch:04}] {h:02}h{m:02}m{s:02}s, {train_loss:.04}, {valid_loss:.04}")
-
-
-def print_start_time():
-    tl, ml = get_time_list()
-    print('')
-    print('='*25 + '[   {}{} {}:{}   ]'.format(ml[int(tl[0])-1], tl[1], tl[2], tl[3]) + '='*25)
-    print('='*25 + '[   TRAIN START   ]' + '='*25)
-    print('')
+        print("[epoch] [  time  ] [train] [valid]")
+    print(f"[{epoch:05}] {h:02}h{m:02}m{s:02}s, {train_loss:.03}, {valid_loss:.03}")
 
 
 """ time """
@@ -291,13 +217,13 @@ def print_start_time():
 
 def get_time_list():
     now = time.localtime(time.time())
-    time_list = [now.tm_mon, now.tm_mday, now.tm_hour, now.tm_min]
+    time_list = [now.tm_year, now.tm_mon, now.tm_mday, now.tm_hour, now.tm_min]
+    time_list[0] = time_list[0] - 2000
     time_list = list(map(str, time_list))
     for i in range(len(time_list)):
-        if len(time_list[i]) != 2:
-            time_list[i] = '0' + time_list[i]
-    month_list = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-    return time_list, month_list
+        if len(time_list[i]) == 1:
+            time_list[i] = "0" + time_list[i]
+    return time_list
 
 
 def get_hms(seconds):
@@ -307,7 +233,6 @@ def get_hms(seconds):
     seconds = seconds - m * 60
     s = int(seconds)
     return h, m, s
-
 
 
 """ ckpt """
@@ -329,7 +254,7 @@ def ckpt(model):
 
 def record_on_csv(args, epoch, seconds, train_loss, valid_loss):
     h, m, s = get_hms(seconds)
-    hms = str(h) + 'h' + str(m) + 'm' + str(s) + 's'
+    hms = str(h) + "h" + str(m) + "m" + str(s) + "s"
     f = open(args.save_path_of_loss, "a", encoding="utf-8", newline="")
     wr = csv.writer(f)
     wr.writerow([epoch, hms, train_loss, valid_loss])
@@ -347,7 +272,7 @@ def imnorm(img):
 
 
 def imread(img_path):
-    img = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)/255
+    img = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE) / 255
     return img.astype("float32")
 
 
@@ -396,3 +321,110 @@ def imrotate90(img):
     img = cv2.flip(img, 1)
     return img
 
+
+def summary(args, model, input_size, batch_size=-1, device="cuda"):
+    def register_hook(module):
+        def hook(module, input, output):
+            class_name = str(module.__class__).split(".")[-1].split("'")[0]
+            module_idx = len(summary)
+
+            m_key = "%s-%i" % (class_name, module_idx + 1)
+            summary[m_key] = OrderedDict()
+            summary[m_key]["input_shape"] = list(input[0].size())
+            summary[m_key]["input_shape"][0] = batch_size
+            if isinstance(output, (list, tuple)):
+                summary[m_key]["output_shape"] = [
+                    [-1] + list(o.size())[1:] for o in output
+                ]
+            else:
+                summary[m_key]["output_shape"] = list(output.size())
+                summary[m_key]["output_shape"][0] = batch_size
+
+            params = 0
+            if hasattr(module, "weight") and hasattr(module.weight, "size"):
+                params += torch.prod(torch.LongTensor(list(module.weight.size())))
+                summary[m_key]["trainable"] = module.weight.requires_grad
+            if hasattr(module, "bias") and hasattr(module.bias, "size"):
+                params += torch.prod(torch.LongTensor(list(module.bias.size())))
+            summary[m_key]["nb_params"] = params
+
+        if (
+            not isinstance(module, nn.Sequential)
+            and not isinstance(module, nn.ModuleList)
+            and not (module == model)
+        ):
+            hooks.append(module.register_forward_hook(hook))
+
+    device = device.lower()
+    assert device in [
+        "cuda",
+        "cpu",
+    ], "Input device is not valid, please specify 'cuda' or 'cpu'"
+
+    if device == "cuda" and torch.cuda.is_available():
+        dtype = torch.cuda.FloatTensor
+    else:
+        dtype = torch.FloatTensor
+
+    # multiple inputs to the network
+    if isinstance(input_size, tuple):
+        input_size = [input_size]
+
+    # batch_size of 2 for batchnorm
+    x = [torch.rand(2, *in_size).type(dtype) for in_size in input_size]
+
+    # create properties
+    summary = OrderedDict()
+    hooks = []
+
+    # register hook
+    model.apply(register_hook)
+
+    # make a forward pass
+    model(*x)
+
+    # remove these hooks
+    for h in hooks:
+        h.remove()
+
+    f = open(args.save_path_of_arch, "a", encoding="utf-8", newline="")
+    wr = csv.writer(f)
+    wr.writerow(["Layer (type)", "Output Shape", "Param #"])
+    total_params = 0
+    total_output = 0
+    trainable_params = 0
+    for layer in summary:
+        # input_shape, output_shape, trainable, nb_params
+        line_new = [
+            layer,
+            summary[layer]["output_shape"],
+            int(summary[layer]["nb_params"]),
+        ]
+        total_params += summary[layer]["nb_params"]
+        total_output += np.prod(summary[layer]["output_shape"])
+        if "trainable" in summary[layer]:
+            if summary[layer]["trainable"] == True:
+                trainable_params += summary[layer]["nb_params"]
+        wr.writerow(line_new)
+
+    # assume 4 bytes/number (float on cuda).
+    total_input_size = abs(np.prod(input_size) * batch_size * 4.0 / (1024 ** 2.0))
+    total_output_size = abs(
+        2.0 * total_output * 4.0 / (1024 ** 2.0)
+    )  # x2 for gradients
+    total_params_size = abs(total_params.numpy() * 4.0 / (1024 ** 2.0))
+    total_size = total_params_size + total_output_size + total_input_size
+
+    wr.writerow(["================================================================"])
+    wr.writerow(["Total params", total_params.item()])
+    wr.writerow(["Total params", total_params.item()])
+    wr.writerow(["Trainable params", trainable_params.item()])
+    wr.writerow(["Non-trainable params", (total_params - trainable_params).item()])
+    wr.writerow(["================================================================"])
+    wr.writerow(["Input size (MB)", total_input_size.item()])
+    wr.writerow(["Forward/backward pass size (MB)", total_output_size.item()])
+    wr.writerow(["Params size (MB)", total_params_size.item()])
+    wr.writerow(["Estimated Total Size (MB)", total_size.item()])
+    wr.writerow(["================================================================"])
+
+    f.close()

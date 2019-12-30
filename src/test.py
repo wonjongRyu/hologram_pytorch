@@ -17,16 +17,22 @@ def test(args, G, test_loader, epoch):
             image = image.cuda()
 
         """ Run Model """
-        _, reconimg = G(image)
+        hologram, reconimg = G(image)
 
         """ reduce dimension to make images """
         reconimg = torch.squeeze(reconimg)
+        hologram = torch.squeeze(hologram)
 
-        """ torch to numpy """
+        """ GPU2CPU, Torch2Numpy """
         reconimg = reconimg.cpu().detach().numpy()
+        hologram = hologram.cpu().detach().numpy()
 
-        """ print images """
+        """ save tensor """
+        save_tensor(args, hologram)
+
+        """ save images """
         for i in range(len(test_loader.dataset)):
-            reconimg[i] = imnorm(reconimg[i])
-            save_reconimg_path = args.save_path_of_images+'/img'+str(i+1)+'_'+str(epoch)+'.png'
-            imwrite(reconimg[i], save_reconimg_path)
+            normalized_img = imnorm(reconimg[i])
+            file_path = combine('img', i+1, '_', epoch, '.png')
+            save_path = os.path.join(args.save_path_of_images, file_path)
+            imwrite(normalized_img, save_path)

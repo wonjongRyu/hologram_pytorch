@@ -178,12 +178,20 @@ def minmaxLoss_rowcolumn(img):
     return sum
 
 
-def d1():
+def do1():
     return nn.Dropout()
 
 
-def d2():
+def do2():
     return nn.Dropout2d()
+
+
+def us():
+    return nn.UpsamplingBilinear2d(scale_factor=2)
+
+
+def ds():
+    return nn.UpsamplingBilinear2d(scale_factor=0.5)
 
 
 def n1(tensor):
